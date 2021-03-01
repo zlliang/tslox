@@ -1,0 +1,5 @@
+fun greeting() {
+  print "Hello from a function!";
+}
+
+greeting();
