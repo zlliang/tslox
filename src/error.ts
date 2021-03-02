@@ -25,6 +25,10 @@ export class SyntaxError extends Error {
   }
 }
 
+export class ResolvingError extends SyntaxError {
+  name = 'ResolvingError'
+}
+
 export class RuntimeError extends Error {
   name = 'RuntimeError'
   message: string

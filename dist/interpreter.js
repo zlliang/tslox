@@ -8,22 +8,28 @@ class Interpreter {
     constructor() {
         this.globals = new Environment();
         this.environment = this.globals;
+        this.locals = new Map();
         // Native function 'clock'
         this.globals.define('clock', new types_1.LoxClockFunction());
     }
-    interpret(statements) {
-        try {
-            for (const stmt of statements) {
-                stmt && this.execute(stmt);
+    interpret(target) {
+        if (target instanceof Array) {
+            try {
+                for (const stmt of target) {
+                    stmt && this.execute(stmt);
+                }
+            }
+            catch (error) {
+                error_1.errorReporter.report(error);
             }
         }
-        catch (error) {
-            error_1.errorReporter.report(error);
+        else {
+            const value = this.evaluate(target);
+            console.log(this.stringify(value));
         }
     }
-    interpretExpr(expr) {
-        const value = this.evaluate(expr);
-        console.log(this.stringify(value));
+    resolve(expr, depth) {
+        this.locals.set(expr, depth);
     }
     evaluate(expr) {
         return expr.accept(this);
@@ -42,6 +48,13 @@ class Interpreter {
         finally {
             this.environment = previousEnvironment;
         }
+    }
+    lookupVariable(name, expr) {
+        const distance = this.locals.get(expr);
+        if (distance !== undefined)
+            return this.environment.getAt(distance, name);
+        else
+            return this.globals.get(name);
     }
     stringify(object) {
         if (object === null)
@@ -140,11 +153,15 @@ class Interpreter {
         return null;
     }
     visitVariableExpr(expr) {
-        return this.environment.get(expr.name);
+        return this.lookupVariable(expr.name, expr);
     }
     visitAssignExpr(expr) {
         const value = this.evaluate(expr.value);
-        this.environment.assign(expr.name, value);
+        const distance = this.locals.get(expr);
+        if (distance !== undefined)
+            this.environment.assignAt(distance, expr.name, value);
+        else
+            this.globals.assign(expr.name, value);
         return value;
     }
     visitLogicalExpr(expr) {
@@ -219,6 +236,17 @@ class Environment {
         else
             this.enclosing = null;
     }
+    ancestor(distance) {
+        if (distance === 0)
+            return this;
+        else {
+            let environment = this.enclosing || null;
+            for (let i = 1; i < distance; i++) {
+                environment = (environment === null || environment === void 0 ? void 0 : environment.enclosing) || null;
+            }
+            return environment;
+        }
+    }
     define(name, value) {
         this.values[name] = value;
     }
@@ -233,11 +261,25 @@ class Environment {
         }
         throw new error_1.RuntimeError(`Undefined variable '${name.lexeme}'`, name);
     }
+    assignAt(distance, name, value) {
+        const environment = this.ancestor(distance);
+        if (environment !== null)
+            environment.values[name.lexeme] = value;
+        // Unreachable (just in case)
+        throw new error_1.RuntimeError(`Undefined variable '${name.lexeme}'`, name);
+    }
     get(name) {
         if (name.lexeme in this.values)
             return this.values[name.lexeme];
         if (this.enclosing !== null)
             return this.enclosing.get(name);
+        throw new error_1.RuntimeError(`Undefined variable '${name.lexeme}'`, name);
+    }
+    getAt(distance, name) {
+        const environment = this.ancestor(distance);
+        if (environment !== null)
+            return environment.values[name.lexeme];
+        // Unreachable (just in case)
         throw new error_1.RuntimeError(`Undefined variable '${name.lexeme}'`, name);
     }
 }

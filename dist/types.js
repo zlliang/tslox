@@ -38,7 +38,7 @@ class LoxFunction extends LoxCallable {
             if (e instanceof LoxFunction.Return)
                 return e.value;
             else
-                throw e;
+                throw e; // Propagate if a real error occurs
         }
         return null;
     }

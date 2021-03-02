@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.errorReporter = exports.RuntimeError = exports.SyntaxError = exports.CliError = void 0;
+exports.errorReporter = exports.RuntimeError = exports.ResolvingError = exports.SyntaxError = exports.CliError = void 0;
 const color_1 = require("./color");
 class CliError extends Error {
     constructor(message) {
@@ -20,6 +20,13 @@ class SyntaxError extends Error {
     }
 }
 exports.SyntaxError = SyntaxError;
+class ResolvingError extends SyntaxError {
+    constructor() {
+        super(...arguments);
+        this.name = 'ResolvingError';
+    }
+}
+exports.ResolvingError = ResolvingError;
 class RuntimeError extends Error {
     constructor(message, token) {
         super();

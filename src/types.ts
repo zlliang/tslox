@@ -53,7 +53,7 @@ export class LoxFunction extends LoxCallable {
       interpreter.executeBlock(this.declaration.body, environment)
     } catch (e) {
       if (e instanceof LoxFunction.Return) return e.value
-      else throw e
+      else throw e // Propagate if a real error occurs
     }
 
     return null

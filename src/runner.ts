@@ -1,6 +1,7 @@
 import { Scanner } from './scanner'
 import { AstPrinter } from './ast'
 import { Parser } from './parser'
+import { Resolver } from './resolver'
 import { Interpreter } from './interpreter'
 import { errorReporter } from './error'
 import { color } from './color'
@@ -9,6 +10,7 @@ type Mode = 'script' | 'repl'
 
 export class Runner {
   private interpreter = new Interpreter()
+  private resolver = new Resolver(this.interpreter)
   private mode: Mode
 
   constructor(mode?: Mode) {
@@ -31,6 +33,10 @@ export class Runner {
 
       if (errorReporter.hadSyntaxError) return
 
+      this.resolver.resolve(statements)
+
+      if (errorReporter.hadSyntaxError) return
+
       console.log(color.yellow('[Output]'))
       this.interpreter.interpret(statements)
     } else {
@@ -42,9 +48,16 @@ export class Runner {
       if (expr !== null) console.log(astPrinter.stringify(expr))
       console.log()
 
+      if (errorReporter.hadSyntaxError) return
+
+      if (statements.length > 0) this.resolver.resolve(statements)
+      if (expr !== null) this.resolver.resolve(expr)
+
+      if (errorReporter.hadSyntaxError) return
+
       console.log(color.yellow('[Output]'))
       if (statements.length > 0) this.interpreter.interpret(statements)
-      if (expr !== null) this.interpreter.interpretExpr(expr)
+      if (expr !== null) this.interpreter.interpret(expr)
     }
   }
 }

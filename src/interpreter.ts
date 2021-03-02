@@ -6,25 +6,32 @@ import { RuntimeError, errorReporter } from './error'
 export class Interpreter implements ast.SyntaxVisitor<LoxObject, void> {
   globals = new Environment()
   private environment = this.globals
+  private locals: Map<ast.Expr, number> = new Map()
 
   constructor() {
     // Native function 'clock'
     this.globals.define('clock', new LoxClockFunction())
   }
 
-  interpret(statements: ast.Stmt[]): void {
-    try {
-      for (const stmt of statements) {
-        stmt && this.execute(stmt)
+  interpret(statements: ast.Stmt[]): void
+  interpret(expr: ast.Expr): void
+  interpret(target: ast.Stmt[] | ast.Expr): void {
+    if (target instanceof Array) {
+      try {
+        for (const stmt of target) {
+          stmt && this.execute(stmt)
+        }
+      } catch (error) {
+        errorReporter.report(error)
       }
-    } catch (error) {
-      errorReporter.report(error)
+    } else {
+      const value = this.evaluate(target)
+      console.log(this.stringify(value))
     }
   }
 
-  interpretExpr(expr: ast.Expr): void {
-    const value = this.evaluate(expr)
-    console.log(this.stringify(value))
+  resolve(expr: ast.Expr, depth: number): void {
+    this.locals.set(expr, depth)
   }
 
   private evaluate(expr: ast.Expr): LoxObject {
@@ -46,6 +53,12 @@ export class Interpreter implements ast.SyntaxVisitor<LoxObject, void> {
     } finally {
       this.environment = previousEnvironment
     }
+  }
+
+  private lookupVariable(name: Token, expr: ast.Expr): LoxObject {
+    const distance = this.locals.get(expr)
+    if (distance !== undefined) return this.environment.getAt(distance, name)
+    else return this.globals.get(name)
   }
 
   private stringify(object: LoxObject) {
@@ -154,12 +167,17 @@ export class Interpreter implements ast.SyntaxVisitor<LoxObject, void> {
   }
 
   visitVariableExpr(expr: ast.VariableExpr): LoxObject {
-    return this.environment.get(expr.name)
+    return this.lookupVariable(expr.name, expr)
   }
 
   visitAssignExpr(expr: ast.AssignExpr): LoxObject {
     const value = this.evaluate(expr.value)
-    this.environment.assign(expr.name, value)
+
+    const distance = this.locals.get(expr)
+    if (distance !== undefined)
+      this.environment.assignAt(distance, expr.name, value)
+    else this.globals.assign(expr.name, value)
+
     return value
   }
 
@@ -249,6 +267,17 @@ export class Environment {
     else this.enclosing = null
   }
 
+  ancestor(distance: number): Environment | null {
+    if (distance === 0) return this
+    else {
+      let environment = this.enclosing || null
+      for (let i = 1; i < distance; i++) {
+        environment = environment?.enclosing || null
+      }
+      return environment
+    }
+  }
+
   define(name: string, value: LoxObject): void {
     this.values[name] = value
   }
@@ -267,10 +296,26 @@ export class Environment {
     throw new RuntimeError(`Undefined variable '${name.lexeme}'`, name)
   }
 
+  assignAt(distance: number, name: Token, value: LoxObject): void {
+    const environment = this.ancestor(distance)
+    if (environment !== null) environment.values[name.lexeme] = value
+
+    // Unreachable (just in case)
+    throw new RuntimeError(`Undefined variable '${name.lexeme}'`, name)
+  }
+
   get(name: Token): LoxObject {
     if (name.lexeme in this.values) return this.values[name.lexeme]
     if (this.enclosing !== null) return this.enclosing.get(name)
 
+    throw new RuntimeError(`Undefined variable '${name.lexeme}'`, name)
+  }
+
+  getAt(distance: number, name: Token): LoxObject {
+    const environment = this.ancestor(distance)
+    if (environment !== null) return environment.values[name.lexeme]
+
+    // Unreachable (just in case)
     throw new RuntimeError(`Undefined variable '${name.lexeme}'`, name)
   }
 }
