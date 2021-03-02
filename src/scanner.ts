@@ -1,3 +1,4 @@
+import { LoxObject } from './types'
 import { SyntaxError } from './error'
 
 export enum TokenType {
@@ -68,8 +69,6 @@ const keywords: Record<string, TokenType> = {
   var: TokenType.Var,
   while: TokenType.While
 }
-
-export type LoxObject = string | number | boolean | null
 
 export class Token {
   type: TokenType

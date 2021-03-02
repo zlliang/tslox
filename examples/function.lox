@@ -1,5 +1,29 @@
-fun greeting() {
-  print "Hello from a function!";
+print "=== function 1: sayHi ===";
+fun sayHi(first, last) {
+  print "Hi, " + first + " " + last + "!";
+}
+sayHi("Dear", "Reader");
+
+print "=== function 2: fib ===";
+fun fib(n) {
+  if (n <= 1) return n;
+  return fib(n - 2) + fib(n - 1);
+}
+for (var i = 0; i < 20; i = i + 1) {
+  print fib(i);
 }
 
-greeting();
+print "=== function 3: closure ===";
+fun makeCounter() {
+  var i = 0;
+  fun count() {
+    i = i + 1;
+    print i;
+  }
+
+  return count;
+}
+var counter = makeCounter();
+for (var j = 0; j < 10; j = j + 1) {
+  counter();
+}

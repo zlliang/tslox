@@ -1,41 +1,15 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.Interpreter = void 0;
+exports.Environment = exports.Interpreter = void 0;
+const types_1 = require("./types");
 const scanner_1 = require("./scanner");
 const error_1 = require("./error");
-class Environment {
-    constructor(enclosing) {
-        this.values = {};
-        if (enclosing)
-            this.enclosing = enclosing;
-        else
-            this.enclosing = null;
-    }
-    define(name, value) {
-        this.values[name] = value;
-    }
-    assign(name, value) {
-        if (name.lexeme in this.values) {
-            this.values[name.lexeme] = value;
-            return;
-        }
-        if (this.enclosing !== null) {
-            this.enclosing.assign(name, value);
-            return;
-        }
-        throw new error_1.RuntimeError(`Undefined variable '${name.lexeme}'`, name);
-    }
-    get(name) {
-        if (name.lexeme in this.values)
-            return this.values[name.lexeme];
-        if (this.enclosing !== null)
-            return this.enclosing.get(name);
-        throw new error_1.RuntimeError(`Undefined variable '${name.lexeme}'`, name);
-    }
-}
 class Interpreter {
     constructor() {
-        this.environment = new Environment();
+        this.globals = new Environment();
+        this.environment = this.globals;
+        // Native function 'clock'
+        this.globals.define('clock', new types_1.LoxClockFunction());
     }
     interpret(statements) {
         try {
@@ -185,6 +159,17 @@ class Interpreter {
         }
         return this.evaluate(expr.right);
     }
+    visitCallExpr(expr) {
+        const callee = this.evaluate(expr.callee);
+        const args = expr.args.map((arg) => this.evaluate(arg));
+        if (!(callee instanceof types_1.LoxCallable)) {
+            throw new error_1.RuntimeError('Can only call functions and classes', expr.paren);
+        }
+        if (args.length !== callee.arity()) {
+            throw new error_1.RuntimeError(`Expected ${callee.arity()} arguments but got ${args.length}`, expr.paren);
+        }
+        return callee.call(this, args);
+    }
     visitExpressionStmt(stmt) {
         this.evaluate(stmt.expression);
     }
@@ -214,5 +199,46 @@ class Interpreter {
             this.execute(stmt.body);
         }
     }
+    visitFunctionStmt(stmt) {
+        const fun = new types_1.LoxFunction(stmt, this.environment);
+        this.environment.define(stmt.name.lexeme, fun);
+    }
+    visitReturnStmt(stmt) {
+        let value = null;
+        if (stmt.value !== null)
+            value = this.evaluate(stmt.value);
+        throw new types_1.LoxFunction.Return(value);
+    }
 }
 exports.Interpreter = Interpreter;
+class Environment {
+    constructor(enclosing) {
+        this.values = {};
+        if (enclosing)
+            this.enclosing = enclosing;
+        else
+            this.enclosing = null;
+    }
+    define(name, value) {
+        this.values[name] = value;
+    }
+    assign(name, value) {
+        if (name.lexeme in this.values) {
+            this.values[name.lexeme] = value;
+            return;
+        }
+        if (this.enclosing !== null) {
+            this.enclosing.assign(name, value);
+            return;
+        }
+        throw new error_1.RuntimeError(`Undefined variable '${name.lexeme}'`, name);
+    }
+    get(name) {
+        if (name.lexeme in this.values)
+            return this.values[name.lexeme];
+        if (this.enclosing !== null)
+            return this.enclosing.get(name);
+        throw new error_1.RuntimeError(`Undefined variable '${name.lexeme}'`, name);
+    }
+}
+exports.Environment = Environment;

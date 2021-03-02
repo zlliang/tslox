@@ -1,16 +1,17 @@
 {
   "name": "tslox",
-  "description": "TODO",
+  "description": "The Lox scripting language, implemented in TypeScript",
   "author": "Zilong Liang <zlliang96@outlook.com>",
-  "version": "0.0.0",
   "private": true,
   "license": "MIT",
+  "repository": "https://github.com/zlliang/tslox",
   "bin": {
     "tslox": "./bin/tslox.js"
   },
   "scripts": {
     "build": "tsc",
-    "tslox": "ts-node-script ./src/main.ts"
+    "tslox-dev": "ts-node-script ./src/main.ts",
+    "tslox": "./bin/tslox.js"
   },
   "devDependencies": {
     "@types/node": "^14.14.31",

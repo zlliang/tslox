@@ -1,4 +1,5 @@
-import { Token, LoxObject } from './scanner'
+import { LoxObject } from './types'
+import { Token } from './scanner'
 
 export interface Expr {
   accept<R>(visitor: ExprVisitor<R>): R
@@ -12,6 +13,7 @@ export interface ExprVisitor<R> {
   visitVariableExpr(expr: VariableExpr): R
   visitAssignExpr(expr: AssignExpr): R
   visitLogicalExpr(expr: LogicalExpr): R
+  visitCallExpr(expr: CallExpr): R
 }
 
 export interface Stmt {
@@ -25,6 +27,8 @@ export interface StmtVisitor<R> {
   visitBlockStmt(stmt: BlockStmt): R
   visitIfStmt(stmt: IfStmt): R
   visitWhileStmt(stmt: WhileStmt): R
+  visitFunctionStmt(stmt: FunctionStmt): R
+  visitReturnStmt(stmt: ReturnStmt): R
 }
 
 export type SyntaxVisitor<RE, RS> = ExprVisitor<RE> & StmtVisitor<RS>
@@ -125,6 +129,22 @@ export class LogicalExpr implements Expr {
   }
 }
 
+export class CallExpr implements Expr {
+  callee: Expr
+  paren: Token // Closing parenthesis
+  args: Expr[]
+
+  constructor(callee: Expr, paren: Token, args: Expr[]) {
+    this.callee = callee
+    this.paren = paren
+    this.args = args
+  }
+
+  accept<R>(visitor: ExprVisitor<R>): R {
+    return visitor.visitCallExpr(this)
+  }
+}
+
 export class ExpressionStmt implements Stmt {
   expression: Expr
 
@@ -205,6 +225,36 @@ export class WhileStmt implements Stmt {
   }
 }
 
+export class FunctionStmt implements Stmt {
+  name: Token
+  params: Token[]
+  body: Stmt[]
+
+  constructor(name: Token, params: Token[], body: Stmt[]) {
+    this.name = name
+    this.params = params
+    this.body = body
+  }
+
+  accept<R>(visitor: StmtVisitor<R>): R {
+    return visitor.visitFunctionStmt(this)
+  }
+}
+
+export class ReturnStmt implements Stmt {
+  keyword: Token
+  value: Expr | null
+
+  constructor(keyword: Token, value: Expr | null) {
+    this.keyword = keyword
+    this.value = value
+  }
+
+  accept<R>(visitor: StmtVisitor<R>): R {
+    return visitor.visitReturnStmt(this)
+  }
+}
+
 export class AstPrinter implements SyntaxVisitor<string, string> {
   // Print AST as S-expressions
   stringify(target: Expr | Stmt | Stmt[]): string {
@@ -265,6 +315,10 @@ export class AstPrinter implements SyntaxVisitor<string, string> {
     return this.parenthesize(expr.operator.lexeme, expr.left, expr.right)
   }
 
+  visitCallExpr(expr: CallExpr): string {
+    return this.parenthesize('call', expr.callee, ...expr.args)
+  }
+
   visitPrintStmt(stmt: PrintStmt): string {
     return this.parenthesize('print', stmt.expression)
   }
@@ -312,8 +366,25 @@ export class AstPrinter implements SyntaxVisitor<string, string> {
   visitWhileStmt(stmt: WhileStmt): string {
     let result = `(while ${this.stringify(stmt.condition)}\n`
     const bodyResult = this.stringify(stmt.body)
-    result += this.indent(bodyResult)
+    result += this.indent(bodyResult) + ')'
 
     return result
+  }
+
+  visitFunctionStmt(stmt: FunctionStmt): string {
+    const paramsResult =
+      stmt.params.length > 0
+        ? ` (params ${stmt.params.map((p) => p.lexeme).join(' ')})`
+        : ''
+    let result = `(fun ${stmt.name.lexeme}${paramsResult}\n`
+    result += this.indent(this.stringify(new BlockStmt(stmt.body))) + ')'
+
+    return result
+  }
+
+  visitReturnStmt(stmt: ReturnStmt): string {
+    return stmt.value !== null
+      ? this.parenthesize(stmt.keyword.lexeme, stmt.value)
+      : this.parenthesize(stmt.keyword.lexeme)
   }
 }

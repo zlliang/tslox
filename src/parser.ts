@@ -219,7 +219,41 @@ export class Parser {
       return new ast.UnaryExpr(operator, right)
     }
 
-    return this.primary()
+    return this.call()
+  }
+
+  private call(): ast.Expr {
+    let expr = this.primary()
+
+    // while (true) {
+    //   if (this.match(TokenType.LeftParen)) expr = this.finishCall(expr)
+    //   else break
+    // }
+
+    while (this.match(TokenType.LeftParen)) expr = this.finishCall(expr)
+
+    return expr
+  }
+
+  private finishCall(callee: ast.Expr): ast.Expr {
+    const args: ast.Expr[] = []
+
+    if (!this.check(TokenType.RightParen)) {
+      do {
+        if (args.length >= 255)
+          errorReporter.report(
+            new SyntaxError("Can't have more than 255 args", this.peek().line)
+          )
+        args.push(this.expression())
+      } while (this.match(TokenType.Comma))
+    }
+
+    const paren = this.consume(
+      TokenType.RightParen,
+      "Expect ')' after arguments"
+    )
+
+    return new ast.CallExpr(callee, paren, args)
   }
 
   private primary(): ast.Expr {
@@ -245,9 +279,35 @@ export class Parser {
   }
 
   private declaration(): ast.Stmt {
+    if (this.match(TokenType.Fun)) return this.funDeclaration('function')
     if (this.match(TokenType.Var)) return this.varDeclaration()
 
     return this.statement()
+  }
+
+  private funDeclaration(kind: 'function' | 'method') {
+    const name = this.consume(TokenType.Identifier, `Expect ${kind} name`)
+    this.consume(TokenType.LeftParen, `Expect '(' after ${kind} name`)
+
+    const params: Token[] = []
+    if (!this.check(TokenType.RightParen)) {
+      do {
+        if (params.length >= 255)
+          errorReporter.report(
+            new SyntaxError(
+              "Can't have more than 255 parameters",
+              this.peek().line
+            )
+          )
+
+        params.push(this.consume(TokenType.Identifier, 'Expect parameter name'))
+      } while (this.match(TokenType.Comma))
+    }
+    this.consume(TokenType.RightParen, "Expect ')' after parameters.")
+
+    this.consume(TokenType.LeftBrace, `Expect '{' before ${kind} body`)
+    const body = this.block()
+    return new ast.FunctionStmt(name, params, body)
   }
 
   private varDeclaration(): ast.Stmt {
@@ -262,6 +322,7 @@ export class Parser {
 
   private statement(): ast.Stmt {
     if (this.match(TokenType.Print)) return this.printStatement()
+    if (this.match(TokenType.Return)) return this.returnStatement()
     if (this.match(TokenType.LeftBrace)) return new ast.BlockStmt(this.block())
     if (this.match(TokenType.If)) return this.ifStatement()
     if (this.match(TokenType.While)) return this.whileStatement()
@@ -280,6 +341,15 @@ export class Parser {
     const expr = this.expression()
     this.consume(TokenType.Semicolon, "Expect ';' after expression")
     return new ast.ExpressionStmt(expr)
+  }
+
+  private returnStatement(): ast.Stmt {
+    const keyword = this.previous()
+    let value = null
+    if (!this.check(TokenType.Semicolon)) value = this.expression()
+
+    this.consume(TokenType.Semicolon, "Expect ';' after return value")
+    return new ast.ReturnStmt(keyword, value)
   }
 
   private block(): ast.Stmt[] {

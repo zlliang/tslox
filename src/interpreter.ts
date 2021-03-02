@@ -1,44 +1,16 @@
-import { Token, TokenType, LoxObject } from './scanner'
+import { LoxObject, LoxCallable, LoxClockFunction, LoxFunction } from './types'
+import { Token, TokenType } from './scanner'
 import * as ast from './ast'
 import { RuntimeError, errorReporter } from './error'
 
-class Environment {
-  enclosing: Environment | null
-  private values: Record<string, LoxObject> = {}
-
-  constructor(enclosing?: Environment) {
-    if (enclosing) this.enclosing = enclosing
-    else this.enclosing = null
-  }
-
-  define(name: string, value: LoxObject): void {
-    this.values[name] = value
-  }
-
-  assign(name: Token, value: LoxObject): void {
-    if (name.lexeme in this.values) {
-      this.values[name.lexeme] = value
-      return
-    }
-
-    if (this.enclosing !== null) {
-      this.enclosing.assign(name, value)
-      return
-    }
-
-    throw new RuntimeError(`Undefined variable '${name.lexeme}'`, name)
-  }
-
-  get(name: Token): LoxObject {
-    if (name.lexeme in this.values) return this.values[name.lexeme]
-    if (this.enclosing !== null) return this.enclosing.get(name)
-
-    throw new RuntimeError(`Undefined variable '${name.lexeme}'`, name)
-  }
-}
-
 export class Interpreter implements ast.SyntaxVisitor<LoxObject, void> {
-  private environment = new Environment()
+  globals = new Environment()
+  private environment = this.globals
+
+  constructor() {
+    // Native function 'clock'
+    this.globals.define('clock', new LoxClockFunction())
+  }
 
   interpret(statements: ast.Stmt[]): void {
     try {
@@ -63,7 +35,7 @@ export class Interpreter implements ast.SyntaxVisitor<LoxObject, void> {
     stmt.accept(this)
   }
 
-  private executeBlock(statements: ast.Stmt[], environment: Environment) {
+  executeBlock(statements: ast.Stmt[], environment: Environment): void {
     const previousEnvironment = this.environment
     try {
       this.environment = environment
@@ -203,6 +175,24 @@ export class Interpreter implements ast.SyntaxVisitor<LoxObject, void> {
     return this.evaluate(expr.right)
   }
 
+  visitCallExpr(expr: ast.CallExpr): LoxObject {
+    const callee = this.evaluate(expr.callee)
+    const args = expr.args.map((arg) => this.evaluate(arg))
+
+    if (!(callee instanceof LoxCallable)) {
+      throw new RuntimeError('Can only call functions and classes', expr.paren)
+    }
+
+    if (args.length !== callee.arity()) {
+      throw new RuntimeError(
+        `Expected ${callee.arity()} arguments but got ${args.length}`,
+        expr.paren
+      )
+    }
+
+    return callee.call(this, args)
+  }
+
   visitExpressionStmt(stmt: ast.ExpressionStmt): void {
     this.evaluate(stmt.expression)
   }
@@ -235,5 +225,52 @@ export class Interpreter implements ast.SyntaxVisitor<LoxObject, void> {
     while (this.isTruthy(this.evaluate(stmt.condition))) {
       this.execute(stmt.body)
     }
+  }
+
+  visitFunctionStmt(stmt: ast.FunctionStmt): void {
+    const fun = new LoxFunction(stmt, this.environment)
+    this.environment.define(stmt.name.lexeme, fun)
+  }
+
+  visitReturnStmt(stmt: ast.ReturnStmt): void {
+    let value = null
+    if (stmt.value !== null) value = this.evaluate(stmt.value)
+
+    throw new LoxFunction.Return(value)
+  }
+}
+
+export class Environment {
+  enclosing: Environment | null
+  private values: Record<string, LoxObject> = {}
+
+  constructor(enclosing?: Environment) {
+    if (enclosing) this.enclosing = enclosing
+    else this.enclosing = null
+  }
+
+  define(name: string, value: LoxObject): void {
+    this.values[name] = value
+  }
+
+  assign(name: Token, value: LoxObject): void {
+    if (name.lexeme in this.values) {
+      this.values[name.lexeme] = value
+      return
+    }
+
+    if (this.enclosing !== null) {
+      this.enclosing.assign(name, value)
+      return
+    }
+
+    throw new RuntimeError(`Undefined variable '${name.lexeme}'`, name)
+  }
+
+  get(name: Token): LoxObject {
+    if (name.lexeme in this.values) return this.values[name.lexeme]
+    if (this.enclosing !== null) return this.enclosing.get(name)
+
+    throw new RuntimeError(`Undefined variable '${name.lexeme}'`, name)
   }
 }
