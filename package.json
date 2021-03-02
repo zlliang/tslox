@@ -1,6 +1,6 @@
 {
   "name": "tslox",
-  "description": "The Lox scripting language, implemented in TypeScript",
+  "description": "An interpreter of the Lox scripting language, implemented in TypeScript",
   "author": "Zilong Liang <zlliang96@outlook.com>",
   "private": true,
   "license": "MIT",

@@ -5,7 +5,7 @@ const readline_1 = require("readline");
 const runner_1 = require("./runner");
 const error_1 = require("./error");
 const color_1 = require("./color");
-const version = color_1.color.cyan('tslox v0.0.0');
+const version = color_1.color.cyan('tslox v0.0.0-20210302');
 const usage = '\n' +
     version +
     '\nUsage:\n\n' +

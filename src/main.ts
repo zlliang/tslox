@@ -5,7 +5,7 @@ import { Runner } from './runner'
 import { CliError, errorReporter } from './error'
 import { color } from './color'
 
-const version = color.cyan('tslox v0.0.0')
+const version = color.cyan('tslox v0.0.0-20210302')
 
 const usage =
   '\n' +
