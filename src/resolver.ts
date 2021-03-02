@@ -7,7 +7,14 @@ type Scope = Record<string, boolean>
 
 enum FunctionType {
   None = 'None',
-  Function = 'Function'
+  Function = 'Function',
+  Initializer = 'Initializer',
+  Method = 'Method'
+}
+
+enum ClassType {
+  None = 'None',
+  Class = 'Class'
 }
 
 class ScopeStack extends Array<Scope> {
@@ -24,6 +31,7 @@ export class Resolver implements ast.SyntaxVisitor<void, void> {
   private interpreter: Interpreter
   private scopes: ScopeStack = new ScopeStack()
   private currentFunction = FunctionType.None
+  private currentClass = ClassType.None
 
   constructor(interpreter: Interpreter) {
     this.interpreter = interpreter
@@ -130,6 +138,28 @@ export class Resolver implements ast.SyntaxVisitor<void, void> {
     this.resolveLocal(expr, expr.name)
   }
 
+  visitGetExpr(expr: ast.GetExpr): void {
+    this.resolve(expr.object)
+  }
+
+  visitSetExpr(expr: ast.SetExpr): void {
+    this.resolve(expr.value)
+    this.resolve(expr.object)
+  }
+
+  visitThisExpr(expr: ast.ThisExpr): void {
+    if (this.currentClass === ClassType.None) {
+      errorReporter.report(
+        new ResolvingError(
+          "Can't use 'this' outside of a class",
+          expr.keyword.line
+        )
+      )
+      return
+    }
+    this.resolveLocal(expr, expr.keyword)
+  }
+
   visitExpressionStmt(stmt: ast.ExpressionStmt): void {
     this.resolve(stmt.expression)
   }
@@ -154,7 +184,17 @@ export class Resolver implements ast.SyntaxVisitor<void, void> {
       )
     }
 
-    if (stmt.value !== null) this.resolve(stmt.value)
+    if (stmt.value !== null) {
+      if (this.currentFunction === FunctionType.Initializer) {
+        errorReporter.report(
+          new ResolvingError(
+            "Can't return a value from an initializer",
+            stmt.keyword.line
+          )
+        )
+      }
+      this.resolve(stmt.value)
+    }
   }
 
   visitWhileStmt(stmt: ast.WhileStmt): void {
@@ -184,5 +224,26 @@ export class Resolver implements ast.SyntaxVisitor<void, void> {
     this.define(stmt.name)
 
     this.resolveFunction(stmt, FunctionType.Function)
+  }
+
+  visitClassStmt(stmt: ast.ClassStmt): void {
+    const enclosingClass = this.currentClass
+    this.currentClass = ClassType.Class
+
+    this.declare(stmt.name)
+    this.define(stmt.name)
+
+    this.beginScope()
+    this.scopes.peek()['this'] = true
+    stmt.methods.forEach((method) => {
+      const declaration =
+        method.name.lexeme === 'init'
+          ? FunctionType.Initializer
+          : FunctionType.Method
+      this.resolveFunction(method, declaration)
+    })
+    this.endScope()
+
+    this.currentClass = enclosingClass
   }
 }

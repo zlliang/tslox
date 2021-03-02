@@ -1,4 +1,3 @@
-print "=== example 1 ===";
 var a = "global";
 {
   fun showA() {

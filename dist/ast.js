@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.AstPrinter = exports.ReturnStmt = exports.FunctionStmt = exports.WhileStmt = exports.IfStmt = exports.BlockStmt = exports.VarStmt = exports.PrintStmt = exports.ExpressionStmt = exports.CallExpr = exports.LogicalExpr = exports.AssignExpr = exports.VariableExpr = exports.UnaryExpr = exports.LiteralExpr = exports.GroupingExpr = exports.BinaryExpr = void 0;
+exports.AstPrinter = exports.ClassStmt = exports.ReturnStmt = exports.FunctionStmt = exports.WhileStmt = exports.IfStmt = exports.BlockStmt = exports.ThisExpr = exports.SetExpr = exports.GetExpr = exports.VarStmt = exports.PrintStmt = exports.ExpressionStmt = exports.CallExpr = exports.LogicalExpr = exports.AssignExpr = exports.VariableExpr = exports.UnaryExpr = exports.LiteralExpr = exports.GroupingExpr = exports.BinaryExpr = void 0;
 class BinaryExpr {
     constructor(left, operator, right) {
         this.left = left;
@@ -109,6 +109,36 @@ class VarStmt {
     }
 }
 exports.VarStmt = VarStmt;
+class GetExpr {
+    constructor(object, name) {
+        this.object = object;
+        this.name = name;
+    }
+    accept(visitor) {
+        return visitor.visitGetExpr(this);
+    }
+}
+exports.GetExpr = GetExpr;
+class SetExpr {
+    constructor(object, name, value) {
+        this.object = object;
+        this.name = name;
+        this.value = value;
+    }
+    accept(visitor) {
+        return visitor.visitSetExpr(this);
+    }
+}
+exports.SetExpr = SetExpr;
+class ThisExpr {
+    constructor(keyword) {
+        this.keyword = keyword;
+    }
+    accept(visitor) {
+        return visitor.visitThisExpr(this);
+    }
+}
+exports.ThisExpr = ThisExpr;
 class BlockStmt {
     constructor(statements) {
         this.statements = statements;
@@ -160,6 +190,16 @@ class ReturnStmt {
     }
 }
 exports.ReturnStmt = ReturnStmt;
+class ClassStmt {
+    constructor(name, methods) {
+        this.name = name;
+        this.methods = methods;
+    }
+    accept(visitor) {
+        return visitor.visitClassStmt(this);
+    }
+}
+exports.ClassStmt = ClassStmt;
 class AstPrinter {
     // Print AST as S-expressions
     stringify(target) {
@@ -214,6 +254,9 @@ class AstPrinter {
     visitCallExpr(expr) {
         return this.parenthesize('call', expr.callee, ...expr.args);
     }
+    visitThisExpr(expr) {
+        return this.parenthesize(expr.keyword.lexeme);
+    }
     visitPrintStmt(stmt) {
         return this.parenthesize('print', stmt.expression);
     }
@@ -229,13 +272,17 @@ class AstPrinter {
             return this.parenthesize('var', name);
         }
     }
+    visitGetExpr(expr) {
+        return this.parenthesize(`get ${expr.name.lexeme}`, expr.object);
+    }
+    visitSetExpr(expr) {
+        return this.parenthesize(`set ${expr.name.lexeme}`, expr.object, expr.value);
+    }
     visitBlockStmt(stmt) {
-        let result = '(block\n';
-        for (const [i, innerStmt] of stmt.statements.entries()) {
-            result += this.indent(this.stringify(innerStmt));
-            if (i < stmt.statements.length - 1)
-                result += '\n';
-        }
+        let result = '(block';
+        stmt.statements.forEach((innerStmt) => {
+            result += '\n' + this.indent(this.stringify(innerStmt));
+        });
         result += ')';
         return result;
     }
@@ -269,6 +316,14 @@ class AstPrinter {
         return stmt.value !== null
             ? this.parenthesize(stmt.keyword.lexeme, stmt.value)
             : this.parenthesize(stmt.keyword.lexeme);
+    }
+    visitClassStmt(stmt) {
+        let result = `(class ${stmt.name.lexeme}`;
+        stmt.methods.forEach((method) => {
+            result += '\n' + this.indent(this.stringify(method));
+        });
+        result += ')';
+        return result;
     }
 }
 exports.AstPrinter = AstPrinter;

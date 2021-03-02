@@ -124,6 +124,8 @@ export class Parser {
       if (expr instanceof ast.VariableExpr) {
         const name = expr.name
         return new ast.AssignExpr(name, value)
+      } else if (expr instanceof ast.GetExpr) {
+        return new ast.SetExpr(expr.object, expr.name, value)
       }
 
       const error = new SyntaxError('Invalid assignment target', equals.line)
@@ -225,17 +227,22 @@ export class Parser {
   private call(): ast.Expr {
     let expr = this.primary()
 
-    // while (true) {
-    //   if (this.match(TokenType.LeftParen)) expr = this.finishCall(expr)
-    //   else break
-    // }
-
-    while (this.match(TokenType.LeftParen)) expr = this.finishCall(expr)
+    while (this.match(TokenType.LeftParen, TokenType.Dot)) {
+      const type = this.previous().type
+      if (type === TokenType.LeftParen) expr = this.finishCall(expr)
+      else if (type === TokenType.Dot) {
+        const name = this.consume(
+          TokenType.Identifier,
+          "Expect property name after '.'"
+        )
+        expr = new ast.GetExpr(expr, name)
+      } else break
+    }
 
     return expr
   }
 
-  private finishCall(callee: ast.Expr): ast.Expr {
+  private finishCall(callee: ast.Expr): ast.CallExpr {
     const args: ast.Expr[] = []
 
     if (!this.check(TokenType.RightParen)) {
@@ -265,6 +272,8 @@ export class Parser {
       return new ast.LiteralExpr(this.previous().literal)
     }
 
+    if (this.match(TokenType.This)) return new ast.ThisExpr(this.previous())
+
     if (this.match(TokenType.Identifier)) {
       return new ast.VariableExpr(this.previous())
     }
@@ -279,13 +288,28 @@ export class Parser {
   }
 
   private declaration(): ast.Stmt {
+    if (this.match(TokenType.Class)) return this.classDeclaration()
     if (this.match(TokenType.Fun)) return this.funDeclaration('function')
     if (this.match(TokenType.Var)) return this.varDeclaration()
 
     return this.statement()
   }
 
-  private funDeclaration(kind: 'function' | 'method') {
+  private classDeclaration(): ast.ClassStmt {
+    const name = this.consume(TokenType.Identifier, 'Expect class name')
+    this.consume(TokenType.LeftBrace, "Expect '{' before class body")
+
+    const methods: ast.FunctionStmt[] = []
+    while (!this.check(TokenType.RightBrace) && !this.isAtEnd()) {
+      methods.push(this.funDeclaration('method'))
+    }
+
+    this.consume(TokenType.RightBrace, "Expect ')' after class body")
+
+    return new ast.ClassStmt(name, methods)
+  }
+
+  private funDeclaration(kind: 'function' | 'method'): ast.FunctionStmt {
     const name = this.consume(TokenType.Identifier, `Expect ${kind} name`)
     this.consume(TokenType.LeftParen, `Expect '(' after ${kind} name`)
 
@@ -310,7 +334,7 @@ export class Parser {
     return new ast.FunctionStmt(name, params, body)
   }
 
-  private varDeclaration(): ast.Stmt {
+  private varDeclaration(): ast.VarStmt {
     const name = this.consume(TokenType.Identifier, 'Expect variable name')
 
     let initializer: ast.Expr | null = null

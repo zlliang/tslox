@@ -1,0 +1,55 @@
+print "=== Example 1 ===";
+class Bacon {
+  eat() {
+    print "Crunch crunch crunch!";
+  }
+}
+Bacon().eat();
+
+print "=== Example 2 ===";
+class Cake {
+  taste() {
+    var adjective = "delicious";
+    print "The " + this.flavor + " cake is " + adjective + "!";
+  }
+}
+var cake = Cake();
+cake.flavor = "German chocolate";
+cake.taste();
+
+print "=== Example 3 ===";
+class Thing {
+  getCallback() {
+    fun localFunction() {
+      print this;
+    }
+
+    return localFunction;
+  }
+}
+var callback = Thing().getCallback();
+callback();
+
+print "=== Example 4 ===";
+class Breakfast {
+  init() {
+    this.name = "cake";
+    this.number = 2;
+    print "Cakes ready!";
+    return;
+  }
+
+  eat() {
+    if (this.number > 0) {
+      print "Eating " + this.name + "...";
+      this.number = this.number - 1;
+    } else {
+      print "Nothing to eat.";
+    }
+  }
+}
+var breakfast = Breakfast();
+var quickEat = breakfast.eat;
+quickEat();
+breakfast.eat();
+quickEat();

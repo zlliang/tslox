@@ -6,7 +6,14 @@ var FunctionType;
 (function (FunctionType) {
     FunctionType["None"] = "None";
     FunctionType["Function"] = "Function";
+    FunctionType["Initializer"] = "Initializer";
+    FunctionType["Method"] = "Method";
 })(FunctionType || (FunctionType = {}));
+var ClassType;
+(function (ClassType) {
+    ClassType["None"] = "None";
+    ClassType["Class"] = "Class";
+})(ClassType || (ClassType = {}));
 class ScopeStack extends Array {
     isEmpty() {
         return this.length < 1;
@@ -19,6 +26,7 @@ class Resolver {
     constructor(interpreter) {
         this.scopes = new ScopeStack();
         this.currentFunction = FunctionType.None;
+        this.currentClass = ClassType.None;
         this.interpreter = interpreter;
     }
     resolve(target) {
@@ -93,6 +101,20 @@ class Resolver {
             error_1.errorReporter.report(new error_1.ResolvingError("Can't read local variable in its own initializer", expr.name.line));
         this.resolveLocal(expr, expr.name);
     }
+    visitGetExpr(expr) {
+        this.resolve(expr.object);
+    }
+    visitSetExpr(expr) {
+        this.resolve(expr.value);
+        this.resolve(expr.object);
+    }
+    visitThisExpr(expr) {
+        if (this.currentClass === ClassType.None) {
+            error_1.errorReporter.report(new error_1.ResolvingError("Can't use 'this' outside of a class", expr.keyword.line));
+            return;
+        }
+        this.resolveLocal(expr, expr.keyword);
+    }
     visitExpressionStmt(stmt) {
         this.resolve(stmt.expression);
     }
@@ -109,8 +131,12 @@ class Resolver {
         if (this.currentFunction === FunctionType.None) {
             error_1.errorReporter.report(new error_1.ResolvingError("Can't return from top-level code", stmt.keyword.line));
         }
-        if (stmt.value !== null)
+        if (stmt.value !== null) {
+            if (this.currentFunction === FunctionType.Initializer) {
+                error_1.errorReporter.report(new error_1.ResolvingError("Can't return a value from an initializer", stmt.keyword.line));
+            }
             this.resolve(stmt.value);
+        }
     }
     visitWhileStmt(stmt) {
         this.resolve(stmt.condition);
@@ -135,6 +161,22 @@ class Resolver {
         this.declare(stmt.name);
         this.define(stmt.name);
         this.resolveFunction(stmt, FunctionType.Function);
+    }
+    visitClassStmt(stmt) {
+        const enclosingClass = this.currentClass;
+        this.currentClass = ClassType.Class;
+        this.declare(stmt.name);
+        this.define(stmt.name);
+        this.beginScope();
+        this.scopes.peek()['this'] = true;
+        stmt.methods.forEach((method) => {
+            const declaration = method.name.lexeme === 'init'
+                ? FunctionType.Initializer
+                : FunctionType.Method;
+            this.resolveFunction(method, declaration);
+        });
+        this.endScope();
+        this.currentClass = enclosingClass;
     }
 }
 exports.Resolver = Resolver;

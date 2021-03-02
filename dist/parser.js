@@ -129,6 +129,9 @@ class Parser {
                 const name = expr.name;
                 return new ast.AssignExpr(name, value);
             }
+            else if (expr instanceof ast.GetExpr) {
+                return new ast.SetExpr(expr.object, expr.name, value);
+            }
             const error = new error_1.SyntaxError('Invalid assignment target', equals.line);
             error_1.errorReporter.report(error);
         }
@@ -198,12 +201,17 @@ class Parser {
     }
     call() {
         let expr = this.primary();
-        // while (true) {
-        //   if (this.match(TokenType.LeftParen)) expr = this.finishCall(expr)
-        //   else break
-        // }
-        while (this.match(scanner_1.TokenType.LeftParen))
-            expr = this.finishCall(expr);
+        while (this.match(scanner_1.TokenType.LeftParen, scanner_1.TokenType.Dot)) {
+            const type = this.previous().type;
+            if (type === scanner_1.TokenType.LeftParen)
+                expr = this.finishCall(expr);
+            else if (type === scanner_1.TokenType.Dot) {
+                const name = this.consume(scanner_1.TokenType.Identifier, "Expect property name after '.'");
+                expr = new ast.GetExpr(expr, name);
+            }
+            else
+                break;
+        }
         return expr;
     }
     finishCall(callee) {
@@ -228,6 +236,8 @@ class Parser {
         if (this.match(scanner_1.TokenType.Number, scanner_1.TokenType.String)) {
             return new ast.LiteralExpr(this.previous().literal);
         }
+        if (this.match(scanner_1.TokenType.This))
+            return new ast.ThisExpr(this.previous());
         if (this.match(scanner_1.TokenType.Identifier)) {
             return new ast.VariableExpr(this.previous());
         }
@@ -239,11 +249,23 @@ class Parser {
         throw this.error(this.peek(), 'Expect expression');
     }
     declaration() {
+        if (this.match(scanner_1.TokenType.Class))
+            return this.classDeclaration();
         if (this.match(scanner_1.TokenType.Fun))
             return this.funDeclaration('function');
         if (this.match(scanner_1.TokenType.Var))
             return this.varDeclaration();
         return this.statement();
+    }
+    classDeclaration() {
+        const name = this.consume(scanner_1.TokenType.Identifier, 'Expect class name');
+        this.consume(scanner_1.TokenType.LeftBrace, "Expect '{' before class body");
+        const methods = [];
+        while (!this.check(scanner_1.TokenType.RightBrace) && !this.isAtEnd()) {
+            methods.push(this.funDeclaration('method'));
+        }
+        this.consume(scanner_1.TokenType.RightBrace, "Expect ')' after class body");
+        return new ast.ClassStmt(name, methods);
     }
     funDeclaration(kind) {
         const name = this.consume(scanner_1.TokenType.Identifier, `Expect ${kind} name`);
