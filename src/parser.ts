@@ -25,7 +25,7 @@ export class Parser {
 
   parseRepl(): [ast.Stmt[], ast.Expr | null] {
     // In REPL, users can input zero or more statements (ending with ';') and
-    // maybe an expression. The interpreter execute all the statements. If there
+    // maybe an expression. The interpreter executes all the statements. If there
     // is an expression, the REPL evaluates and prints its value.
     let cursor = this.current
     const statements: ast.Stmt[] = []

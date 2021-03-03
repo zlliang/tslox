@@ -36,7 +36,7 @@ Hello, world!
 
 ## Features
 
-1. **REPL that allows Lox expressions**. This is a challenge in [Chapter 8](https://craftinginterpreters.com/statements-and-state.html#challenges) of the book. In REPL mode, one can input zero or more statements (ending with '`;`') and maybe an expression. The interpreter execute all the statements. If there is an expression, the REPL evaluates and prints its value.
+1. **REPL that allows Lox expressions.** This is a challenge in [Chapter 8](https://craftinginterpreters.com/statements-and-state.html#challenges) of the book. In REPL mode, one can input zero or more statements (ending with '`;`') and maybe an expression. The interpreter executes all the statements. If there is an expression, the REPL evaluates and prints its value.
 
    ```
    [tslox]> var a = 3; a + 3
@@ -64,6 +64,10 @@ Hello, world!
    [Output]
    Hello, world!
    ```
+
+## Disclaimer
+
+Code structures and some implementation details of TSLox are different from the original [jlox](https://github.com/munificent/craftinginterpreters/tree/master/java/com/craftinginterpreters) version. Since I read the book just for learning and exercising, I didn't write any test for TSLox. Bugs may occur. If you find one, please feel free to open an issue! :)
 
 ## Resources
 
