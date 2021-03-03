@@ -2,9 +2,61 @@
 
 An interpreter of the [Lox](https://github.com/munificent/craftinginterpreters) scripting language, implemented in TypeScript.
 
-Lox is a tiny scripting language describe in [Bob Nystrom](https://stuffwithstuff.com/)'s book [Crafting Interpreters](https://craftinginterpreters.com/). Following [Part II](https://craftinginterpreters.com/a-tree-walk-interpreter.html) of the book, I complete a tree-walk interpreter of Lox using [TypeScript](https://www.typescriptlang.org/), as a writing-an-interpreter-from-scratch exercise.
+Lox is a tiny scripting language described in [Bob Nystrom](https://stuffwithstuff.com/)'s book [Crafting Interpreters](https://craftinginterpreters.com/). Following [Part II](https://craftinginterpreters.com/a-tree-walk-interpreter.html) of the book, I complete a tree-walk interpreter of Lox using [TypeScript](https://www.typescriptlang.org/), as a writing-an-interpreter-from-scratch exercise.
 
-I am working on the second implementation using [Rust](https://rust-lang.org), following [Part III](https://craftinginterpreters.com/a-bytecode-virtual-machine.html) of the book. It will be a bytecode virtual machine. See [zlliang/rslox](https://github.com/zlliang/rslox).
+<!-- I am working on the second implementation using [Rust](https://rust-lang.org), following [Part III](https://craftinginterpreters.com/a-bytecode-virtual-machine.html) of the book. It will be a bytecode virtual machine. See [zlliang/rslox](https://github.com/zlliang/rslox). -->
+
+## Usage
+
+Clone this repository, and run the CLI as:
+
+```bash
+$ yarn tslox     # If you're using yarn
+$ npm run tslox  # or npm
+```
+
+For detailed usages, see the help message:
+
+```
+tslox v0.0.0-20210303
+Usage:
+
+  tslox [--verbose]            Run tslox REPL (Add '--verbose' to show AST)
+  tslox <script> [--verbose]   Run a specified script file (Add '--verbose' to show AST)
+  tslox -v, --version          Show version info
+  tslox -h, --help             Show this help message
+```
+
+## Features
+
+1. **REPL that allows Lox expressions**. This is a challenge in [Chapter 8](https://craftinginterpreters.com/statements-and-state.html#challenges) of the book. In REPL mode, one can input zero or more statements (ending with '`;`') and maybe an expression. The interpreter execute all the statements. If there is an expression, the REPL evaluates and prints its value.
+
+   ```
+   [tslox]> var a = 3; a + 3
+   6
+
+   [tslox]> print a / 8;
+   0.375
+
+   [tslox]> a + 25
+   28
+   ```
+
+2. **Verbose mode that prints both ASTs and outputs.** In [Chapter 5](https://craftinginterpreters.com/representing-code.html#the-visitor-pattern) of the book, a utility class [`AstPrinter`](<https://craftinginterpreters.com/representing-code.html#a-(not-very)-pretty-printer>) is created to print parsed Lox ASTs as [S-expressions](https://en.wikipedia.org/wiki/S-expression). TSLox basically adds all of the visit methods, and shows ASTs alongside script outputs, when the `--verbose` flag is enabled.
+
+   ```
+   $ yarn tslox --verbose
+
+   [tslox]> fun greet() { return "Hello, world!"; }  print greet();
+   [AST]
+   (fun greet
+     (block
+       (return "Hello, world!")))
+   (print (call greet))
+
+   [Output]
+   Hello, world!
+   ```
 
 ## Resources
 

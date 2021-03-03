@@ -44,7 +44,7 @@ class Parser {
     parseRepl() {
         // In REPL, users can input zero or more statements (ending with ';') and
         // maybe an expression. The interpreter execute all the statements. If there
-        // is an expression, it evaluate print its value.
+        // is an expression, the REPL evaluates and prints its value.
         let cursor = this.current;
         const statements = [];
         try {
