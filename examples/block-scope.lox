@@ -1,4 +1,3 @@
-print "=== Block scope 1 ===";
 var a = "global a";
 var b = "global b";
 var c = "global c";
@@ -18,11 +17,3 @@ var c = "global c";
 print a;
 print b;
 print c;
-
-print "=== Block scope 2 ===";
-var d = 1;
-{
-  var d = d + 2;
-  print d;
-}
-print d;

@@ -40,6 +40,7 @@ class Resolver {
         for (let i = this.scopes.length - 1; i >= 0; i--) {
             if (name.lexeme in this.scopes[i]) {
                 this.interpreter.resolve(expr, this.scopes.length - 1 - i);
+                return;
             }
         }
     }
