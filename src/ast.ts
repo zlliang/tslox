@@ -17,6 +17,7 @@ export interface ExprVisitor<R> {
   visitGetExpr(expr: GetExpr): R
   visitSetExpr(expr: SetExpr): R
   visitThisExpr(expr: ThisExpr): R
+  visitSuperExpr(expr: SuperExpr): R
 }
 
 export interface Stmt {
@@ -149,44 +150,6 @@ export class CallExpr implements Expr {
   }
 }
 
-export class ExpressionStmt implements Stmt {
-  expression: Expr
-
-  constructor(expression: Expr) {
-    this.expression = expression
-  }
-
-  accept<R>(visitor: StmtVisitor<R>): R {
-    return visitor.visitExpressionStmt(this)
-  }
-}
-
-export class PrintStmt implements Stmt {
-  expression: Expr
-
-  constructor(expression: Expr) {
-    this.expression = expression
-  }
-
-  accept<R>(visitor: StmtVisitor<R>): R {
-    return visitor.visitPrintStmt(this)
-  }
-}
-
-export class VarStmt implements Stmt {
-  name: Token
-  initializer: Expr | null
-
-  constructor(name: Token, initializer: Expr | null) {
-    this.name = name
-    this.initializer = initializer
-  }
-
-  accept<R>(visitor: StmtVisitor<R>): R {
-    return visitor.visitVarStmt(this)
-  }
-}
-
 export class GetExpr implements Expr {
   object: Expr
   name: Token
@@ -226,6 +189,58 @@ export class ThisExpr implements Expr {
 
   accept<R>(visitor: ExprVisitor<R>): R {
     return visitor.visitThisExpr(this)
+  }
+}
+
+export class SuperExpr implements Expr {
+  keyword: Token
+  method: Token
+
+  constructor(keyword: Token, method: Token) {
+    this.keyword = keyword
+    this.method = method
+  }
+
+  accept<R>(visitor: ExprVisitor<R>): R {
+    return visitor.visitSuperExpr(this)
+  }
+}
+
+export class ExpressionStmt implements Stmt {
+  expression: Expr
+
+  constructor(expression: Expr) {
+    this.expression = expression
+  }
+
+  accept<R>(visitor: StmtVisitor<R>): R {
+    return visitor.visitExpressionStmt(this)
+  }
+}
+
+export class PrintStmt implements Stmt {
+  expression: Expr
+
+  constructor(expression: Expr) {
+    this.expression = expression
+  }
+
+  accept<R>(visitor: StmtVisitor<R>): R {
+    return visitor.visitPrintStmt(this)
+  }
+}
+
+export class VarStmt implements Stmt {
+  name: Token
+  initializer: Expr | null
+
+  constructor(name: Token, initializer: Expr | null) {
+    this.name = name
+    this.initializer = initializer
+  }
+
+  accept<R>(visitor: StmtVisitor<R>): R {
+    return visitor.visitVarStmt(this)
   }
 }
 
@@ -303,10 +318,16 @@ export class ReturnStmt implements Stmt {
 
 export class ClassStmt implements Stmt {
   name: Token
+  superclass: VariableExpr | null
   methods: FunctionStmt[]
 
-  constructor(name: Token, methods: FunctionStmt[]) {
+  constructor(
+    name: Token,
+    superclass: VariableExpr | null,
+    methods: FunctionStmt[]
+  ) {
     this.name = name
+    this.superclass = superclass
     this.methods = methods
   }
 
@@ -379,8 +400,20 @@ export class AstPrinter implements SyntaxVisitor<string, string> {
     return this.parenthesize('call', expr.callee, ...expr.args)
   }
 
+  visitGetExpr(expr: GetExpr): string {
+    return this.parenthesize(`get ${expr.name.lexeme}`, expr.object)
+  }
+
+  visitSetExpr(expr: SetExpr): string {
+    return this.parenthesize(`set ${expr.name.lexeme}`, expr.object, expr.value)
+  }
+
   visitThisExpr(expr: ThisExpr): string {
     return this.parenthesize(expr.keyword.lexeme)
+  }
+
+  visitSuperExpr(expr: SuperExpr): string {
+    return this.parenthesize(`get ${expr.method.lexeme} (super)`)
   }
 
   visitPrintStmt(stmt: PrintStmt): string {
@@ -398,14 +431,6 @@ export class AstPrinter implements SyntaxVisitor<string, string> {
     } else {
       return this.parenthesize('var', name)
     }
-  }
-
-  visitGetExpr(expr: GetExpr): string {
-    return this.parenthesize(`get ${expr.name.lexeme}`, expr.object)
-  }
-
-  visitSetExpr(expr: SetExpr): string {
-    return this.parenthesize(`set ${expr.name.lexeme}`, expr.object, expr.value)
   }
 
   visitBlockStmt(stmt: BlockStmt): string {
@@ -461,6 +486,8 @@ export class AstPrinter implements SyntaxVisitor<string, string> {
 
   visitClassStmt(stmt: ClassStmt): string {
     let result = `(class ${stmt.name.lexeme}`
+    if (stmt.superclass !== null) result += ' ' + stmt.superclass.name.lexeme
+
     stmt.methods.forEach((method) => {
       result += '\n' + this.indent(this.stringify(method))
     })

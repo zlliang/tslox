@@ -66,9 +66,10 @@ LoxFunction.Return = class Return {
     }
 };
 class LoxClass extends LoxCallable {
-    constructor(name, methods) {
+    constructor(name, superclass, methods) {
         super();
         this.name = name;
+        this.superclass = superclass;
         this.methods = methods;
     }
     arity() {
@@ -90,6 +91,9 @@ class LoxClass extends LoxCallable {
     findMethod(name) {
         if (name in this.methods)
             return this.methods[name];
+        if (this.superclass !== null) {
+            return this.superclass.findMethod(name);
+        }
         return null;
     }
 }

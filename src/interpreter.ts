@@ -237,6 +237,36 @@ export class Interpreter implements ast.SyntaxVisitor<types.LoxObject, void> {
     return this.lookupVariable(expr.keyword, expr)
   }
 
+  visitSuperExpr(expr: ast.SuperExpr): types.LoxObject {
+    const distance = this.locals.get(expr)
+    if (distance === undefined) {
+      // Unreachable
+      throw new RuntimeError("Invalid 'super' usage", expr.keyword)
+    }
+
+    const superclass = this.environment.getAt(distance, expr.keyword)
+    if (!(superclass instanceof types.LoxClass)) {
+      // Unreachable
+      throw new RuntimeError("Invalid 'super' usage", expr.keyword)
+    }
+
+    const object = this.environment.enclosing?.getThis()
+    if (!(object instanceof types.LoxInstance)) {
+      // Unreachable
+      throw new RuntimeError("Invalid 'super' usage", expr.keyword)
+    }
+
+    const method = superclass.findMethod(expr.method.lexeme)
+    if (method === null) {
+      throw new RuntimeError(
+        `Undefined property ${expr.method.lexeme}`,
+        expr.method
+      )
+    }
+
+    return method.bind(object)
+  }
+
   visitExpressionStmt(stmt: ast.ExpressionStmt): void {
     this.evaluate(stmt.expression)
   }
@@ -284,20 +314,41 @@ export class Interpreter implements ast.SyntaxVisitor<types.LoxObject, void> {
   }
 
   visitClassStmt(stmt: ast.ClassStmt): void {
+    let superclass: types.LoxObject | null = null
+    if (stmt.superclass !== null) {
+      superclass = this.evaluate(stmt.superclass)
+      if (!(superclass instanceof types.LoxClass)) {
+        throw new RuntimeError(
+          'Superclass must be a class',
+          stmt.superclass.name
+        )
+      }
+    }
+
     this.environment.define(stmt.name.lexeme, null)
+
+    let environment = this.environment
+    if (stmt.superclass !== null) {
+      environment = new Environment(environment)
+      environment.define('super', superclass)
+    }
 
     const methods: Record<string, types.LoxFunction> = {}
     stmt.methods.forEach((method) => {
       const fun = new types.LoxFunction(
         method,
-        this.environment,
+        environment,
         method.name.lexeme === 'init'
       )
       methods[method.name.lexeme] = fun
     })
 
-    const klass = new types.LoxClass(stmt.name.lexeme, methods)
-    this.environment.assign(stmt.name, klass)
+    const klass = new types.LoxClass(stmt.name.lexeme, superclass, methods)
+
+    if (superclass !== null && environment.enclosing !== null)
+      environment = environment.enclosing
+
+    environment.assign(stmt.name, klass)
   }
 }
 
@@ -356,7 +407,7 @@ export class Environment {
   getAt(distance: number, name: Token): types.LoxObject {
     const environment = this.ancestor(distance)
     if (environment !== null) return environment.values[name.lexeme]
-    // Unreachable (just in case)
+    // Unreachable
     throw new RuntimeError(`Undefined variable '${name.lexeme}'`, name)
   }
 

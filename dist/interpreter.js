@@ -223,6 +223,29 @@ class Interpreter {
     visitThisExpr(expr) {
         return this.lookupVariable(expr.keyword, expr);
     }
+    visitSuperExpr(expr) {
+        var _a;
+        const distance = this.locals.get(expr);
+        if (distance === undefined) {
+            // Unreachable
+            throw new error_1.RuntimeError("Invalid 'super' usage", expr.keyword);
+        }
+        const superclass = this.environment.getAt(distance, expr.keyword);
+        if (!(superclass instanceof types.LoxClass)) {
+            // Unreachable
+            throw new error_1.RuntimeError("Invalid 'super' usage", expr.keyword);
+        }
+        const object = (_a = this.environment.enclosing) === null || _a === void 0 ? void 0 : _a.getThis();
+        if (!(object instanceof types.LoxInstance)) {
+            // Unreachable
+            throw new error_1.RuntimeError("Invalid 'super' usage", expr.keyword);
+        }
+        const method = superclass.findMethod(expr.method.lexeme);
+        if (method === null) {
+            throw new error_1.RuntimeError(`Undefined property ${expr.method.lexeme}`, expr.method);
+        }
+        return method.bind(object);
+    }
     visitExpressionStmt(stmt) {
         this.evaluate(stmt.expression);
     }
@@ -263,14 +286,28 @@ class Interpreter {
         throw new types.LoxFunction.Return(value);
     }
     visitClassStmt(stmt) {
+        let superclass = null;
+        if (stmt.superclass !== null) {
+            superclass = this.evaluate(stmt.superclass);
+            if (!(superclass instanceof types.LoxClass)) {
+                throw new error_1.RuntimeError('Superclass must be a class', stmt.superclass.name);
+            }
+        }
         this.environment.define(stmt.name.lexeme, null);
+        let environment = this.environment;
+        if (stmt.superclass !== null) {
+            environment = new Environment(environment);
+            environment.define('super', superclass);
+        }
         const methods = {};
         stmt.methods.forEach((method) => {
-            const fun = new types.LoxFunction(method, this.environment, method.name.lexeme === 'init');
+            const fun = new types.LoxFunction(method, environment, method.name.lexeme === 'init');
             methods[method.name.lexeme] = fun;
         });
-        const klass = new types.LoxClass(stmt.name.lexeme, methods);
-        this.environment.assign(stmt.name, klass);
+        const klass = new types.LoxClass(stmt.name.lexeme, superclass, methods);
+        if (superclass !== null && environment.enclosing !== null)
+            environment = environment.enclosing;
+        environment.assign(stmt.name, klass);
     }
 }
 exports.Interpreter = Interpreter;
@@ -326,7 +363,7 @@ class Environment {
         const environment = this.ancestor(distance);
         if (environment !== null)
             return environment.values[name.lexeme];
-        // Unreachable (just in case)
+        // Unreachable
         throw new error_1.RuntimeError(`Undefined variable '${name.lexeme}'`, name);
     }
     getThis() {

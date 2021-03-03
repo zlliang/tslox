@@ -13,6 +13,7 @@ var ClassType;
 (function (ClassType) {
     ClassType["None"] = "None";
     ClassType["Class"] = "Class";
+    ClassType["SubClass"] = "SubClass";
 })(ClassType || (ClassType = {}));
 class ScopeStack extends Array {
     isEmpty() {
@@ -115,6 +116,15 @@ class Resolver {
         }
         this.resolveLocal(expr, expr.keyword);
     }
+    visitSuperExpr(expr) {
+        if (this.currentClass === ClassType.None) {
+            error_1.errorReporter.report(new error_1.ResolvingError("Can't use 'super' outside of class", expr.keyword.line));
+        }
+        else if (this.currentClass !== ClassType.SubClass) {
+            error_1.errorReporter.report(new error_1.ResolvingError("Can't use 'super' in a class with no superclass", expr.keyword.line));
+        }
+        this.resolveLocal(expr, expr.keyword);
+    }
     visitExpressionStmt(stmt) {
         this.resolve(stmt.expression);
     }
@@ -167,6 +177,17 @@ class Resolver {
         this.currentClass = ClassType.Class;
         this.declare(stmt.name);
         this.define(stmt.name);
+        if (stmt.superclass !== null) {
+            if (stmt.name.lexeme === stmt.superclass.name.lexeme) {
+                error_1.errorReporter.report(new error_1.ResolvingError("A class can't inherit from itself.", stmt.superclass.name.line));
+            }
+            else {
+                this.currentClass = ClassType.SubClass;
+                this.resolve(stmt.superclass);
+                this.beginScope();
+                this.scopes.peek()['super'] = true;
+            }
+        }
         this.beginScope();
         this.scopes.peek()['this'] = true;
         stmt.methods.forEach((method) => {
@@ -176,6 +197,8 @@ class Resolver {
             this.resolveFunction(method, declaration);
         });
         this.endScope();
+        if (stmt.superclass !== null)
+            this.endScope();
         this.currentClass = enclosingClass;
     }
 }

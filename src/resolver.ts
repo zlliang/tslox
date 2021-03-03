@@ -14,7 +14,8 @@ enum FunctionType {
 
 enum ClassType {
   None = 'None',
-  Class = 'Class'
+  Class = 'Class',
+  SubClass = 'SubClass'
 }
 
 class ScopeStack extends Array<Scope> {
@@ -160,6 +161,25 @@ export class Resolver implements ast.SyntaxVisitor<void, void> {
     this.resolveLocal(expr, expr.keyword)
   }
 
+  visitSuperExpr(expr: ast.SuperExpr): void {
+    if (this.currentClass === ClassType.None) {
+      errorReporter.report(
+        new ResolvingError(
+          "Can't use 'super' outside of class",
+          expr.keyword.line
+        )
+      )
+    } else if (this.currentClass !== ClassType.SubClass) {
+      errorReporter.report(
+        new ResolvingError(
+          "Can't use 'super' in a class with no superclass",
+          expr.keyword.line
+        )
+      )
+    }
+    this.resolveLocal(expr, expr.keyword)
+  }
+
   visitExpressionStmt(stmt: ast.ExpressionStmt): void {
     this.resolve(stmt.expression)
   }
@@ -233,6 +253,23 @@ export class Resolver implements ast.SyntaxVisitor<void, void> {
     this.declare(stmt.name)
     this.define(stmt.name)
 
+    if (stmt.superclass !== null) {
+      if (stmt.name.lexeme === stmt.superclass.name.lexeme) {
+        errorReporter.report(
+          new ResolvingError(
+            "A class can't inherit from itself.",
+            stmt.superclass.name.line
+          )
+        )
+      } else {
+        this.currentClass = ClassType.SubClass
+        this.resolve(stmt.superclass)
+
+        this.beginScope()
+        this.scopes.peek()['super'] = true
+      }
+    }
+
     this.beginScope()
     this.scopes.peek()['this'] = true
     stmt.methods.forEach((method) => {
@@ -243,6 +280,8 @@ export class Resolver implements ast.SyntaxVisitor<void, void> {
       this.resolveFunction(method, declaration)
     })
     this.endScope()
+
+    if (stmt.superclass !== null) this.endScope()
 
     this.currentClass = enclosingClass
   }

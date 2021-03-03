@@ -274,6 +274,16 @@ export class Parser {
 
     if (this.match(TokenType.This)) return new ast.ThisExpr(this.previous())
 
+    if (this.match(TokenType.Super)) {
+      const keyword = this.previous()
+      this.consume(TokenType.Dot, "Expect '.' after 'super'")
+      const method = this.consume(
+        TokenType.Identifier,
+        'Expect superclass method name'
+      )
+      return new ast.SuperExpr(keyword, method)
+    }
+
     if (this.match(TokenType.Identifier)) {
       return new ast.VariableExpr(this.previous())
     }
@@ -297,6 +307,13 @@ export class Parser {
 
   private classDeclaration(): ast.ClassStmt {
     const name = this.consume(TokenType.Identifier, 'Expect class name')
+
+    let superclass: ast.VariableExpr | null = null
+    if (this.match(TokenType.Less)) {
+      this.consume(TokenType.Identifier, 'Expect superclass name')
+      superclass = new ast.VariableExpr(this.previous())
+    }
+
     this.consume(TokenType.LeftBrace, "Expect '{' before class body")
 
     const methods: ast.FunctionStmt[] = []
@@ -306,7 +323,7 @@ export class Parser {
 
     this.consume(TokenType.RightBrace, "Expect ')' after class body")
 
-    return new ast.ClassStmt(name, methods)
+    return new ast.ClassStmt(name, superclass, methods)
   }
 
   private funDeclaration(kind: 'function' | 'method'): ast.FunctionStmt {

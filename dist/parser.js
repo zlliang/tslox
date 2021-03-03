@@ -238,6 +238,12 @@ class Parser {
         }
         if (this.match(scanner_1.TokenType.This))
             return new ast.ThisExpr(this.previous());
+        if (this.match(scanner_1.TokenType.Super)) {
+            const keyword = this.previous();
+            this.consume(scanner_1.TokenType.Dot, "Expect '.' after 'super'");
+            const method = this.consume(scanner_1.TokenType.Identifier, 'Expect superclass method name');
+            return new ast.SuperExpr(keyword, method);
+        }
         if (this.match(scanner_1.TokenType.Identifier)) {
             return new ast.VariableExpr(this.previous());
         }
@@ -259,13 +265,18 @@ class Parser {
     }
     classDeclaration() {
         const name = this.consume(scanner_1.TokenType.Identifier, 'Expect class name');
+        let superclass = null;
+        if (this.match(scanner_1.TokenType.Less)) {
+            this.consume(scanner_1.TokenType.Identifier, 'Expect superclass name');
+            superclass = new ast.VariableExpr(this.previous());
+        }
         this.consume(scanner_1.TokenType.LeftBrace, "Expect '{' before class body");
         const methods = [];
         while (!this.check(scanner_1.TokenType.RightBrace) && !this.isAtEnd()) {
             methods.push(this.funDeclaration('method'));
         }
         this.consume(scanner_1.TokenType.RightBrace, "Expect ')' after class body");
-        return new ast.ClassStmt(name, methods);
+        return new ast.ClassStmt(name, superclass, methods);
     }
     funDeclaration(kind) {
         const name = this.consume(scanner_1.TokenType.Identifier, `Expect ${kind} name`);
