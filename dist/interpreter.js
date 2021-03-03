@@ -312,7 +312,8 @@ class Environment {
         if (environment !== null)
             environment.values[name.lexeme] = value;
         // Unreachable (just in case)
-        throw new error_1.RuntimeError(`Undefined variable '${name.lexeme}'`, name);
+        else
+            throw new error_1.RuntimeError(`Undefined variable '${name.lexeme}'`, name);
     }
     get(name) {
         if (name.lexeme in this.values)

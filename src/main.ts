@@ -11,10 +11,34 @@ const usage =
   '\n' +
   version +
   '\nUsage:\n\n' +
-  '  tslox                  Run tslox REPL\n' +
-  '  tslox [script]         Run a specified script file\n' +
-  '  tslox -v, --version    Show version info\n' +
-  '  tslox -h, --help       Show this help message\n'
+  "  tslox [--verbose]            Run tslox REPL (Add '--verbose' to show AST)\n" +
+  "  tslox <script> [--verbose]   Run a specified script file (Add '--verbose' to show AST)\n" +
+  '  tslox -v, --version          Show version info\n' +
+  '  tslox -h, --help             Show this help message\n'
+
+type CliArgs = {
+  help: boolean
+  version: boolean
+  verbose: boolean
+  filename: string | null
+}
+
+function parseArgs(args: string[]): CliArgs {
+  const filenameArgs = args.filter((arg) => !arg.startsWith('-'))
+
+  if (args.length > 2 || filenameArgs.length > 1) {
+    errorReporter.report(new CliError('Too much arguments'))
+    console.log(usage)
+    process.exit(64)
+  }
+
+  const help = args.includes('-h') || args.includes('--help')
+  const version = args.includes('-v') || args.includes('--version')
+  const verbose = args.includes('--verbose')
+  const filename = filenameArgs[0] || null
+
+  return { help, version, verbose, filename }
+}
 
 function runFile(runner: Runner, path: string): void {
   try {
@@ -71,26 +95,23 @@ function runPrompt(runner: Runner): void {
 }
 
 function main(): void {
-  const args = process.argv.slice(2)
+  const args = parseArgs(process.argv.slice(2))
 
-  if (args.length > 1) {
-    errorReporter.report(new CliError('Too much arguments'))
+  if (args.help) {
     console.log(usage)
-    process.exit(64)
-  } else if (args.length == 1) {
-    if (['-v', '--version'].includes(args[0])) {
-      console.log(version)
-      process.exit(0)
-    }
-    if (['-h', '--help'].includes(args[0])) {
-      console.log(usage)
-      process.exit(0)
-    }
+    process.exit(0)
+  }
 
-    const runner = new Runner('script')
-    runFile(runner, args[0])
+  if (args.version) {
+    console.log(version)
+    process.exit(0)
+  }
+
+  if (args.filename !== null) {
+    const runner = new Runner('script', args.verbose)
+    runFile(runner, args.filename)
   } else {
-    const runner = new Runner('repl')
+    const runner = new Runner('repl', args.verbose)
     runPrompt(runner)
   }
 }

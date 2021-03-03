@@ -342,9 +342,8 @@ export class Environment {
   assignAt(distance: number, name: Token, value: types.LoxObject): void {
     const environment = this.ancestor(distance)
     if (environment !== null) environment.values[name.lexeme] = value
-
     // Unreachable (just in case)
-    throw new RuntimeError(`Undefined variable '${name.lexeme}'`, name)
+    else throw new RuntimeError(`Undefined variable '${name.lexeme}'`, name)
   }
 
   get(name: Token): types.LoxObject {
@@ -357,7 +356,6 @@ export class Environment {
   getAt(distance: number, name: Token): types.LoxObject {
     const environment = this.ancestor(distance)
     if (environment !== null) return environment.values[name.lexeme]
-
     // Unreachable (just in case)
     throw new RuntimeError(`Undefined variable '${name.lexeme}'`, name)
   }
