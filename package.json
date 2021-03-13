@@ -4,7 +4,10 @@
   "author": "Zilong Liang <zlliang96@outlook.com>",
   "private": true,
   "license": "MIT",
-  "repository": "https://github.com/zlliang/tslox",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/zlliang/tslox"
+  },
   "bin": {
     "tslox": "./bin/tslox.js"
   },
