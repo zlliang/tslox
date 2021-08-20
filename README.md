@@ -4,8 +4,6 @@ An interpreter of the [Lox](https://github.com/munificent/craftinginterpreters) 
 
 Lox is a tiny scripting language described in [Bob Nystrom](https://stuffwithstuff.com/)'s book [Crafting Interpreters](https://craftinginterpreters.com/). Following [Part II](https://craftinginterpreters.com/a-tree-walk-interpreter.html) of the book, I complete a tree-walk interpreter of Lox using [TypeScript](https://www.typescriptlang.org/), as a writing-an-interpreter-from-scratch exercise.
 
-<!-- I am working on the second implementation using [Rust](https://rust-lang.org), following [Part III](https://craftinginterpreters.com/a-bytecode-virtual-machine.html) of the book. It will be a bytecode virtual machine. See [zlliang/rustlox](https://github.com/zlliang/rustlox). -->
-
 ## Usage
 
 Clone this repository, and run the CLI as:
