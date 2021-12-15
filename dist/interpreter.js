@@ -29,7 +29,7 @@ class Interpreter {
         this.environment = this.globals;
         this.locals = new Map();
         // Native function 'clock'
-        this.globals.define('clock', new types.LoxClockFunction());
+        this.globals.define("clock", new types.LoxClockFunction());
     }
     interpret(target) {
         if (target instanceof Array) {
@@ -77,10 +77,10 @@ class Interpreter {
     }
     stringify(object) {
         if (object === null)
-            return 'nil';
-        if (typeof object === 'number') {
+            return "nil";
+        if (typeof object === "number") {
             let text = object.toString();
-            if (text.endsWith('.0'))
+            if (text.endsWith(".0"))
                 text = text.substring(0, text.length - 2);
             return text;
         }
@@ -89,7 +89,7 @@ class Interpreter {
     isTruthy(object) {
         if (object === null)
             return false;
-        if (typeof object === 'boolean')
+        if (typeof object === "boolean")
             return object;
         return true;
     }
@@ -101,16 +101,16 @@ class Interpreter {
         return a === b;
     }
     checkNumberOperand(token, operand) {
-        if (typeof operand === 'number')
+        if (typeof operand === "number")
             return;
         else
-            throw new error_1.RuntimeError('Operand must be a number', token);
+            throw new error_1.RuntimeError("Operand must be a number", token);
     }
     checkNumberOperands(token, left, right) {
-        if (typeof left === 'number' && typeof right === 'number')
+        if (typeof left === "number" && typeof right === "number")
             return;
         else
-            throw new error_1.RuntimeError('Operands must be numbers', token);
+            throw new error_1.RuntimeError("Operands must be numbers", token);
     }
     visitBinaryExpr(expr) {
         const left = this.evaluate(expr.left);
@@ -142,13 +142,13 @@ class Interpreter {
                 this.checkNumberOperands(expr.operator, left, right);
                 return left * right;
             case scanner_1.TokenType.Plus:
-                if (typeof left === 'number' && typeof right === 'number') {
+                if (typeof left === "number" && typeof right === "number") {
                     return left + right;
                 }
-                if (typeof left === 'string' && typeof right === 'string') {
+                if (typeof left === "string" && typeof right === "string") {
                     return left + right;
                 }
-                throw new error_1.RuntimeError('Operands must be two numbers or two strings', expr.operator);
+                throw new error_1.RuntimeError("Operands must be two numbers or two strings", expr.operator);
         }
         // Unreachable
         return null;
@@ -199,7 +199,7 @@ class Interpreter {
         const callee = this.evaluate(expr.callee);
         const args = expr.args.map((arg) => this.evaluate(arg));
         if (!(callee instanceof types.LoxCallable)) {
-            throw new error_1.RuntimeError('Can only call functions and classes', expr.paren);
+            throw new error_1.RuntimeError("Can only call functions and classes", expr.paren);
         }
         if (args.length !== callee.arity()) {
             throw new error_1.RuntimeError(`Expected ${callee.arity()} arguments but got ${args.length}`, expr.paren);
@@ -210,12 +210,12 @@ class Interpreter {
         const object = this.evaluate(expr.object);
         if (object instanceof types.LoxInstance)
             return object.get(expr.name);
-        throw new error_1.RuntimeError('Only class instances have properties', expr.name);
+        throw new error_1.RuntimeError("Only class instances have properties", expr.name);
     }
     visitSetExpr(expr) {
         const object = this.evaluate(expr.object);
         if (!(object instanceof types.LoxInstance))
-            throw new error_1.RuntimeError('Only class instances have fields', expr.name);
+            throw new error_1.RuntimeError("Only class instances have fields", expr.name);
         const value = this.evaluate(expr.value);
         object.set(expr.name, value);
         return value;
@@ -290,18 +290,18 @@ class Interpreter {
         if (stmt.superclass !== null) {
             superclass = this.evaluate(stmt.superclass);
             if (!(superclass instanceof types.LoxClass)) {
-                throw new error_1.RuntimeError('Superclass must be a class', stmt.superclass.name);
+                throw new error_1.RuntimeError("Superclass must be a class", stmt.superclass.name);
             }
         }
         this.environment.define(stmt.name.lexeme, null);
         let environment = this.environment;
         if (stmt.superclass !== null) {
             environment = new Environment(environment);
-            environment.define('super', superclass);
+            environment.define("super", superclass);
         }
         const methods = {};
         stmt.methods.forEach((method) => {
-            const fun = new types.LoxFunction(method, environment, method.name.lexeme === 'init');
+            const fun = new types.LoxFunction(method, environment, method.name.lexeme === "init");
             methods[method.name.lexeme] = fun;
         });
         const klass = new types.LoxClass(stmt.name.lexeme, superclass, methods);
@@ -367,7 +367,7 @@ class Environment {
         throw new error_1.RuntimeError(`Undefined variable '${name.lexeme}'`, name);
     }
     getThis() {
-        return this.values['this'];
+        return this.values["this"];
     }
 }
 exports.Environment = Environment;

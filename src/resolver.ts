@@ -1,21 +1,21 @@
-import { Token } from './scanner'
-import * as ast from './ast'
-import { Interpreter } from './interpreter'
-import { ResolvingError, errorReporter } from './error'
+import { Token } from "./scanner"
+import * as ast from "./ast"
+import { Interpreter } from "./interpreter"
+import { ResolvingError, errorReporter } from "./error"
 
 type Scope = Record<string, boolean>
 
 enum FunctionType {
-  None = 'None',
-  Function = 'Function',
-  Initializer = 'Initializer',
-  Method = 'Method'
+  None = "None",
+  Function = "Function",
+  Initializer = "Initializer",
+  Method = "Method",
 }
 
 enum ClassType {
-  None = 'None',
-  Class = 'Class',
-  SubClass = 'SubClass'
+  None = "None",
+  Class = "Class",
+  SubClass = "SubClass",
 }
 
 class ScopeStack extends Array<Scope> {
@@ -84,7 +84,7 @@ export class Resolver implements ast.SyntaxVisitor<void, void> {
     if (name.lexeme in scope)
       errorReporter.report(
         new ResolvingError(
-          'Already variable with this name in this scope',
+          "Already variable with this name in this scope",
           name.line
         )
       )
@@ -267,15 +267,15 @@ export class Resolver implements ast.SyntaxVisitor<void, void> {
         this.resolve(stmt.superclass)
 
         this.beginScope()
-        this.scopes.peek()['super'] = true
+        this.scopes.peek()["super"] = true
       }
     }
 
     this.beginScope()
-    this.scopes.peek()['this'] = true
+    this.scopes.peek()["this"] = true
     stmt.methods.forEach((method) => {
       const declaration =
-        method.name.lexeme === 'init'
+        method.name.lexeme === "init"
           ? FunctionType.Initializer
           : FunctionType.Method
       this.resolveFunction(method, declaration)

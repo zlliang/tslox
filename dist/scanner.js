@@ -64,7 +64,7 @@ const keywords = {
     this: TokenType.This,
     true: TokenType.True,
     var: TokenType.Var,
-    while: TokenType.While
+    while: TokenType.While,
 };
 class Token {
     constructor(type, lexeme, literal, line) {
@@ -91,70 +91,70 @@ class Scanner {
             this.start = this.current;
             this.scanToken();
         }
-        this.tokens.push(new Token(TokenType.EOF, '', null, this.line));
+        this.tokens.push(new Token(TokenType.EOF, "", null, this.line));
         return this.tokens;
     }
     scanToken() {
         const c = this.advance();
         switch (c) {
-            case '(':
+            case "(":
                 this.addToken(TokenType.LeftParen);
                 break;
-            case ')':
+            case ")":
                 this.addToken(TokenType.RightParen);
                 break;
-            case '{':
+            case "{":
                 this.addToken(TokenType.LeftBrace);
                 break;
-            case '}':
+            case "}":
                 this.addToken(TokenType.RightBrace);
                 break;
-            case ',':
+            case ",":
                 this.addToken(TokenType.Comma);
                 break;
-            case '.':
+            case ".":
                 this.addToken(TokenType.Dot);
                 break;
-            case '-':
+            case "-":
                 this.addToken(TokenType.Minus);
                 break;
-            case '+':
+            case "+":
                 this.addToken(TokenType.Plus);
                 break;
-            case ';':
+            case ";":
                 this.addToken(TokenType.Semicolon);
                 break;
-            case '*':
+            case "*":
                 this.addToken(TokenType.Star);
                 break;
-            case '!':
-                this.addToken(this.match('=') ? TokenType.BangEqual : TokenType.Bang);
+            case "!":
+                this.addToken(this.match("=") ? TokenType.BangEqual : TokenType.Bang);
                 break;
-            case '=':
-                this.addToken(this.match('=') ? TokenType.EqualEqual : TokenType.Equal);
+            case "=":
+                this.addToken(this.match("=") ? TokenType.EqualEqual : TokenType.Equal);
                 break;
-            case '<':
-                this.addToken(this.match('=') ? TokenType.LessEqual : TokenType.Less);
+            case "<":
+                this.addToken(this.match("=") ? TokenType.LessEqual : TokenType.Less);
                 break;
-            case '>':
-                this.addToken(this.match('=') ? TokenType.GreaterEqual : TokenType.Greater);
+            case ">":
+                this.addToken(this.match("=") ? TokenType.GreaterEqual : TokenType.Greater);
                 break;
-            case '/':
-                if (this.match('/')) {
+            case "/":
+                if (this.match("/")) {
                     // A comment goes until the end of the line
-                    while (this.peek() != '\n' && !this.isAtEnd())
+                    while (this.peek() != "\n" && !this.isAtEnd())
                         this.advance();
                 }
                 else {
                     this.addToken(TokenType.Slash);
                 }
                 break;
-            case ' ':
-            case '\r':
-            case '\t':
+            case " ":
+            case "\r":
+            case "\t":
                 // Ignore whitespaces
                 break;
-            case '\n':
+            case "\n":
                 // Line break
                 this.line++;
                 break;
@@ -174,13 +174,13 @@ class Scanner {
         return this.current >= this.source.length;
     }
     isDigit(c) {
-        return codeOf(c) >= codeOf('0') && codeOf(c) <= codeOf('9');
+        return codeOf(c) >= codeOf("0") && codeOf(c) <= codeOf("9");
     }
     isAlpha(c) {
         const code = codeOf(c);
-        return ((code >= codeOf('a') && code <= codeOf('z')) ||
-            (code >= codeOf('A') && code <= codeOf('Z')) ||
-            code === codeOf('_'));
+        return ((code >= codeOf("a") && code <= codeOf("z")) ||
+            (code >= codeOf("A") && code <= codeOf("Z")) ||
+            code === codeOf("_"));
     }
     isAlphaNumeric(c) {
         return this.isAlpha(c) || this.isDigit(c);
@@ -202,22 +202,22 @@ class Scanner {
     }
     peek() {
         if (this.isAtEnd())
-            return '\0';
+            return "\0";
         return this.source.charAt(this.current);
     }
     peekNext() {
         if (this.current + 1 >= this.source.length)
-            return '\0';
+            return "\0";
         return this.source.charAt(this.current + 1);
     }
     string() {
         while (this.peek() != '"' && !this.isAtEnd()) {
-            if (this.peek() === '\n')
+            if (this.peek() === "\n")
                 this.line++;
             this.advance();
         }
         if (this.isAtEnd())
-            throw new error_1.SyntaxError('Unterminated string', this.line);
+            throw new error_1.SyntaxError("Unterminated string", this.line);
         this.advance(); // The closing '"'
         const value = this.source.substring(this.start + 1, this.current - 1); // Trim the surrounding quotes
         this.addToken(TokenType.String, value);
@@ -225,7 +225,7 @@ class Scanner {
     number() {
         while (this.isDigit(this.peek()))
             this.advance();
-        if (this.peek() === '.' && this.isDigit(this.peekNext())) {
+        if (this.peek() === "." && this.isDigit(this.peekNext())) {
             this.advance(); // Consume the dot character
             while (this.isDigit(this.peek()))
                 this.advance();

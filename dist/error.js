@@ -5,7 +5,7 @@ const color_1 = require("./color");
 class CliError extends Error {
     constructor(message) {
         super();
-        this.name = 'CliError';
+        this.name = "CliError";
         this.message = message;
     }
 }
@@ -13,7 +13,7 @@ exports.CliError = CliError;
 class SyntaxError extends Error {
     constructor(message, line, where) {
         super();
-        this.name = 'SyntaxError';
+        this.name = "SyntaxError";
         this.message = message;
         this.line = line;
         this.where = where;
@@ -23,14 +23,14 @@ exports.SyntaxError = SyntaxError;
 class ResolvingError extends SyntaxError {
     constructor() {
         super(...arguments);
-        this.name = 'ResolvingError';
+        this.name = "ResolvingError";
     }
 }
 exports.ResolvingError = ResolvingError;
 class RuntimeError extends Error {
     constructor(message, token) {
         super();
-        this.name = 'RuntimeError';
+        this.name = "RuntimeError";
         this.message = message;
         this.token = token;
     }
@@ -43,12 +43,12 @@ class ErrorReporter {
         this.hadRuntimeError = false;
     }
     report(error) {
-        let header = '';
+        let header = "";
         if (error instanceof SyntaxError && error.line) {
             header += `[${error.name} (line ${error.line}`;
             if (error.where)
                 header += ` at ${error.where}`;
-            header += ')';
+            header += ")";
         }
         else if (error instanceof RuntimeError) {
             header += `[${error.name} (line ${error.token.line})`;
@@ -57,10 +57,10 @@ class ErrorReporter {
             header += `[${error.name}`;
         }
         else {
-            header += '[CliError';
+            header += "[CliError";
         }
-        header += ']';
-        console.error(color_1.color.red(header) + ' ' + error.message);
+        header += "]";
+        console.error(color_1.color.red(header) + " " + error.message);
         if (error instanceof RuntimeError)
             this.hadRuntimeError = true;
         else if (error instanceof SyntaxError)

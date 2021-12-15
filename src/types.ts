@@ -1,7 +1,7 @@
-import { Token } from './scanner'
-import * as ast from './ast'
-import { Interpreter, Environment } from './interpreter'
-import { RuntimeError } from './error'
+import { Token } from "./scanner"
+import * as ast from "./ast"
+import { Interpreter, Environment } from "./interpreter"
+import { RuntimeError } from "./error"
 
 export abstract class LoxCallable {
   abstract arity(): number
@@ -76,7 +76,7 @@ export class LoxFunction extends LoxCallable {
 
   bind(instance: LoxInstance): LoxFunction {
     const environment = new Environment(this.closure)
-    environment.define('this', instance)
+    environment.define("this", instance)
     return new LoxFunction(this.declaration, environment, this.isInitializer)
   }
 }
@@ -98,14 +98,14 @@ export class LoxClass extends LoxCallable {
   }
 
   arity(): number {
-    const initializer = this.findMethod('init')
+    const initializer = this.findMethod("init")
     if (initializer === null) return 0
     return initializer.arity()
   }
 
   call(interpreter: Interpreter, args: LoxObject[]): LoxObject {
     const instance = new LoxInstance(this)
-    const initializer = this.findMethod('init')
+    const initializer = this.findMethod("init")
     if (initializer !== null) initializer.bind(instance).call(interpreter, args)
     return instance
   }

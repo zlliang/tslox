@@ -94,7 +94,7 @@ class Parser {
     }
     error(token, message) {
         const err = token.type === scanner_1.TokenType.EOF
-            ? new error_1.SyntaxError(message, token.line, 'end')
+            ? new error_1.SyntaxError(message, token.line, "end")
             : new error_1.SyntaxError(message, token.line, `'${token.lexeme}'`);
         return err;
     }
@@ -132,7 +132,7 @@ class Parser {
             else if (expr instanceof ast.GetExpr) {
                 return new ast.SetExpr(expr.object, expr.name, value);
             }
-            const error = new error_1.SyntaxError('Invalid assignment target', equals.line);
+            const error = new error_1.SyntaxError("Invalid assignment target", equals.line);
             error_1.errorReporter.report(error);
         }
         return expr;
@@ -241,7 +241,7 @@ class Parser {
         if (this.match(scanner_1.TokenType.Super)) {
             const keyword = this.previous();
             this.consume(scanner_1.TokenType.Dot, "Expect '.' after 'super'");
-            const method = this.consume(scanner_1.TokenType.Identifier, 'Expect superclass method name');
+            const method = this.consume(scanner_1.TokenType.Identifier, "Expect superclass method name");
             return new ast.SuperExpr(keyword, method);
         }
         if (this.match(scanner_1.TokenType.Identifier)) {
@@ -252,28 +252,28 @@ class Parser {
             this.consume(scanner_1.TokenType.RightParen, "Expect ')' after expression");
             return new ast.GroupingExpr(expr);
         }
-        throw this.error(this.peek(), 'Expect expression');
+        throw this.error(this.peek(), "Expect expression");
     }
     declaration() {
         if (this.match(scanner_1.TokenType.Class))
             return this.classDeclaration();
         if (this.match(scanner_1.TokenType.Fun))
-            return this.funDeclaration('function');
+            return this.funDeclaration("function");
         if (this.match(scanner_1.TokenType.Var))
             return this.varDeclaration();
         return this.statement();
     }
     classDeclaration() {
-        const name = this.consume(scanner_1.TokenType.Identifier, 'Expect class name');
+        const name = this.consume(scanner_1.TokenType.Identifier, "Expect class name");
         let superclass = null;
         if (this.match(scanner_1.TokenType.Less)) {
-            this.consume(scanner_1.TokenType.Identifier, 'Expect superclass name');
+            this.consume(scanner_1.TokenType.Identifier, "Expect superclass name");
             superclass = new ast.VariableExpr(this.previous());
         }
         this.consume(scanner_1.TokenType.LeftBrace, "Expect '{' before class body");
         const methods = [];
         while (!this.check(scanner_1.TokenType.RightBrace) && !this.isAtEnd()) {
-            methods.push(this.funDeclaration('method'));
+            methods.push(this.funDeclaration("method"));
         }
         this.consume(scanner_1.TokenType.RightBrace, "Expect ')' after class body");
         return new ast.ClassStmt(name, superclass, methods);
@@ -286,7 +286,7 @@ class Parser {
             do {
                 if (params.length >= 255)
                     error_1.errorReporter.report(new error_1.SyntaxError("Can't have more than 255 parameters", this.peek().line));
-                params.push(this.consume(scanner_1.TokenType.Identifier, 'Expect parameter name'));
+                params.push(this.consume(scanner_1.TokenType.Identifier, "Expect parameter name"));
             } while (this.match(scanner_1.TokenType.Comma));
         }
         this.consume(scanner_1.TokenType.RightParen, "Expect ')' after parameters.");
@@ -295,7 +295,7 @@ class Parser {
         return new ast.FunctionStmt(name, params, body);
     }
     varDeclaration() {
-        const name = this.consume(scanner_1.TokenType.Identifier, 'Expect variable name');
+        const name = this.consume(scanner_1.TokenType.Identifier, "Expect variable name");
         let initializer = null;
         if (this.match(scanner_1.TokenType.Equal))
             initializer = this.expression();

@@ -1,7 +1,7 @@
-import * as types from './types'
-import { Token, TokenType } from './scanner'
-import * as ast from './ast'
-import { RuntimeError, errorReporter } from './error'
+import * as types from "./types"
+import { Token, TokenType } from "./scanner"
+import * as ast from "./ast"
+import { RuntimeError, errorReporter } from "./error"
 
 export class Interpreter implements ast.SyntaxVisitor<types.LoxObject, void> {
   globals = new Environment()
@@ -10,7 +10,7 @@ export class Interpreter implements ast.SyntaxVisitor<types.LoxObject, void> {
 
   constructor() {
     // Native function 'clock'
-    this.globals.define('clock', new types.LoxClockFunction())
+    this.globals.define("clock", new types.LoxClockFunction())
   }
 
   interpret(statements: ast.Stmt[]): void
@@ -22,7 +22,7 @@ export class Interpreter implements ast.SyntaxVisitor<types.LoxObject, void> {
           stmt && this.execute(stmt)
         }
       } catch (error) {
-        errorReporter.report(error)
+        errorReporter.report(error as Error)
       }
     } else {
       const value = this.evaluate(target)
@@ -62,11 +62,11 @@ export class Interpreter implements ast.SyntaxVisitor<types.LoxObject, void> {
   }
 
   private stringify(object: types.LoxObject) {
-    if (object === null) return 'nil'
+    if (object === null) return "nil"
 
-    if (typeof object === 'number') {
+    if (typeof object === "number") {
       let text = object.toString()
-      if (text.endsWith('.0')) text = text.substring(0, text.length - 2)
+      if (text.endsWith(".0")) text = text.substring(0, text.length - 2)
       return text
     }
 
@@ -75,7 +75,7 @@ export class Interpreter implements ast.SyntaxVisitor<types.LoxObject, void> {
 
   private isTruthy(object: types.LoxObject): boolean {
     if (object === null) return false
-    if (typeof object === 'boolean') return object
+    if (typeof object === "boolean") return object
     return true
   }
 
@@ -87,8 +87,8 @@ export class Interpreter implements ast.SyntaxVisitor<types.LoxObject, void> {
   }
 
   checkNumberOperand(token: Token, operand: types.LoxObject): void {
-    if (typeof operand === 'number') return
-    else throw new RuntimeError('Operand must be a number', token)
+    if (typeof operand === "number") return
+    else throw new RuntimeError("Operand must be a number", token)
   }
 
   checkNumberOperands(
@@ -96,8 +96,8 @@ export class Interpreter implements ast.SyntaxVisitor<types.LoxObject, void> {
     left: types.LoxObject,
     right: types.LoxObject
   ): void {
-    if (typeof left === 'number' && typeof right === 'number') return
-    else throw new RuntimeError('Operands must be numbers', token)
+    if (typeof left === "number" && typeof right === "number") return
+    else throw new RuntimeError("Operands must be numbers", token)
   }
 
   visitBinaryExpr(expr: ast.BinaryExpr): types.LoxObject {
@@ -131,14 +131,14 @@ export class Interpreter implements ast.SyntaxVisitor<types.LoxObject, void> {
         this.checkNumberOperands(expr.operator, left, right)
         return (left as number) * (right as number)
       case TokenType.Plus:
-        if (typeof left === 'number' && typeof right === 'number') {
+        if (typeof left === "number" && typeof right === "number") {
           return left + right
         }
-        if (typeof left === 'string' && typeof right === 'string') {
+        if (typeof left === "string" && typeof right === "string") {
           return left + right
         }
         throw new RuntimeError(
-          'Operands must be two numbers or two strings',
+          "Operands must be two numbers or two strings",
           expr.operator
         )
     }
@@ -202,7 +202,7 @@ export class Interpreter implements ast.SyntaxVisitor<types.LoxObject, void> {
     const args = expr.args.map((arg) => this.evaluate(arg))
 
     if (!(callee instanceof types.LoxCallable)) {
-      throw new RuntimeError('Can only call functions and classes', expr.paren)
+      throw new RuntimeError("Can only call functions and classes", expr.paren)
     }
 
     if (args.length !== callee.arity()) {
@@ -219,14 +219,14 @@ export class Interpreter implements ast.SyntaxVisitor<types.LoxObject, void> {
     const object = this.evaluate(expr.object)
     if (object instanceof types.LoxInstance) return object.get(expr.name)
 
-    throw new RuntimeError('Only class instances have properties', expr.name)
+    throw new RuntimeError("Only class instances have properties", expr.name)
   }
 
   visitSetExpr(expr: ast.SetExpr): types.LoxObject {
     const object = this.evaluate(expr.object)
 
     if (!(object instanceof types.LoxInstance))
-      throw new RuntimeError('Only class instances have fields', expr.name)
+      throw new RuntimeError("Only class instances have fields", expr.name)
 
     const value = this.evaluate(expr.value)
     object.set(expr.name, value)
@@ -319,7 +319,7 @@ export class Interpreter implements ast.SyntaxVisitor<types.LoxObject, void> {
       superclass = this.evaluate(stmt.superclass)
       if (!(superclass instanceof types.LoxClass)) {
         throw new RuntimeError(
-          'Superclass must be a class',
+          "Superclass must be a class",
           stmt.superclass.name
         )
       }
@@ -330,7 +330,7 @@ export class Interpreter implements ast.SyntaxVisitor<types.LoxObject, void> {
     let environment = this.environment
     if (stmt.superclass !== null) {
       environment = new Environment(environment)
-      environment.define('super', superclass)
+      environment.define("super", superclass)
     }
 
     const methods: Record<string, types.LoxFunction> = {}
@@ -338,7 +338,7 @@ export class Interpreter implements ast.SyntaxVisitor<types.LoxObject, void> {
       const fun = new types.LoxFunction(
         method,
         environment,
-        method.name.lexeme === 'init'
+        method.name.lexeme === "init"
       )
       methods[method.name.lexeme] = fun
     })
@@ -412,6 +412,6 @@ export class Environment {
   }
 
   getThis(): types.LoxObject {
-    return this.values['this']
+    return this.values["this"]
   }
 }

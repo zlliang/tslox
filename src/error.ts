@@ -1,8 +1,8 @@
-import { Token } from './scanner'
-import { color } from './color'
+import { Token } from "./scanner"
+import { color } from "./color"
 
 export class CliError extends Error {
-  name = 'CliError'
+  name = "CliError"
   message: string
 
   constructor(message: string) {
@@ -12,7 +12,7 @@ export class CliError extends Error {
 }
 
 export class SyntaxError extends Error {
-  name = 'SyntaxError'
+  name = "SyntaxError"
   message: string
   line?: number
   where?: string
@@ -26,11 +26,11 @@ export class SyntaxError extends Error {
 }
 
 export class ResolvingError extends SyntaxError {
-  name = 'ResolvingError'
+  name = "ResolvingError"
 }
 
 export class RuntimeError extends Error {
-  name = 'RuntimeError'
+  name = "RuntimeError"
   message: string
   token: Token
 
@@ -47,20 +47,20 @@ class ErrorReporter {
   hadRuntimeError = false
 
   report(error: Error): void {
-    let header = ''
+    let header = ""
     if (error instanceof SyntaxError && error.line) {
       header += `[${error.name} (line ${error.line}`
       if (error.where) header += ` at ${error.where}`
-      header += ')'
+      header += ")"
     } else if (error instanceof RuntimeError) {
       header += `[${error.name} (line ${error.token.line})`
     } else if (error instanceof CliError) {
       header += `[${error.name}`
     } else {
-      header += '[CliError'
+      header += "[CliError"
     }
-    header += ']'
-    console.error(color.red(header) + ' ' + error.message)
+    header += "]"
+    console.error(color.red(header) + " " + error.message)
 
     if (error instanceof RuntimeError) this.hadRuntimeError = true
     else if (error instanceof SyntaxError) this.hadSyntaxError = true

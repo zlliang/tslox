@@ -19,11 +19,11 @@ class Runner {
         const scanner = new scanner_1.Scanner(source);
         const tokens = scanner.scanTokens();
         const parser = new parser_1.Parser(tokens);
-        if (this.mode === 'script') {
+        if (this.mode === "script") {
             const statements = parser.parse();
             if (this.verbose) {
                 const astPrinter = new ast_1.AstPrinter();
-                console.log(color_1.color.yellow('[AST]'));
+                console.log(color_1.color.yellow("[AST]"));
                 console.log(astPrinter.stringify(statements));
                 console.log();
             }
@@ -33,14 +33,14 @@ class Runner {
             if (error_1.errorReporter.hadSyntaxError)
                 return;
             if (this.verbose)
-                console.log(color_1.color.yellow('[Output]'));
+                console.log(color_1.color.yellow("[Output]"));
             this.interpreter.interpret(statements);
         }
         else {
             const [statements, expr] = parser.parseRepl();
             if (this.verbose) {
                 const astPrinter = new ast_1.AstPrinter();
-                console.log(color_1.color.yellow('[AST]'));
+                console.log(color_1.color.yellow("[AST]"));
                 if (statements.length > 0)
                     console.log(astPrinter.stringify(statements));
                 if (expr !== null)
@@ -56,7 +56,7 @@ class Runner {
             if (error_1.errorReporter.hadSyntaxError)
                 return;
             if (this.verbose)
-                console.log(color_1.color.yellow('[Output]'));
+                console.log(color_1.color.yellow("[Output]"));
             if (statements.length > 0)
                 this.interpreter.interpret(statements);
             if (expr !== null)

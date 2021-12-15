@@ -55,7 +55,7 @@ class LoxFunction extends LoxCallable {
     }
     bind(instance) {
         const environment = new interpreter_1.Environment(this.closure);
-        environment.define('this', instance);
+        environment.define("this", instance);
         return new LoxFunction(this.declaration, environment, this.isInitializer);
     }
 }
@@ -73,14 +73,14 @@ class LoxClass extends LoxCallable {
         this.methods = methods;
     }
     arity() {
-        const initializer = this.findMethod('init');
+        const initializer = this.findMethod("init");
         if (initializer === null)
             return 0;
         return initializer.arity();
     }
     call(interpreter, args) {
         const instance = new LoxInstance(this);
-        const initializer = this.findMethod('init');
+        const initializer = this.findMethod("init");
         if (initializer !== null)
             initializer.bind(instance).call(interpreter, args);
         return instance;

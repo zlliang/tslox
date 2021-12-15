@@ -67,7 +67,7 @@ class Resolver {
             return;
         const scope = this.scopes.peek();
         if (name.lexeme in scope)
-            error_1.errorReporter.report(new error_1.ResolvingError('Already variable with this name in this scope', name.line));
+            error_1.errorReporter.report(new error_1.ResolvingError("Already variable with this name in this scope", name.line));
         scope[name.lexeme] = false;
     }
     define(name) {
@@ -186,13 +186,13 @@ class Resolver {
                 this.currentClass = ClassType.SubClass;
                 this.resolve(stmt.superclass);
                 this.beginScope();
-                this.scopes.peek()['super'] = true;
+                this.scopes.peek()["super"] = true;
             }
         }
         this.beginScope();
-        this.scopes.peek()['this'] = true;
+        this.scopes.peek()["this"] = true;
         stmt.methods.forEach((method) => {
-            const declaration = method.name.lexeme === 'init'
+            const declaration = method.name.lexeme === "init"
                 ? FunctionType.Initializer
                 : FunctionType.Method;
             this.resolveFunction(method, declaration);

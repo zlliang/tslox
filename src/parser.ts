@@ -1,6 +1,6 @@
-import { Token, TokenType } from './scanner'
-import * as ast from './ast'
-import { SyntaxError, errorReporter } from './error'
+import { Token, TokenType } from "./scanner"
+import * as ast from "./ast"
+import { SyntaxError, errorReporter } from "./error"
 
 export class Parser {
   private tokens: Token[]
@@ -16,7 +16,7 @@ export class Parser {
       try {
         statements.push(this.declaration())
       } catch (error) {
-        errorReporter.report(error)
+        errorReporter.report(error as Error)
         this.synchronize()
       }
     }
@@ -83,7 +83,7 @@ export class Parser {
   private error(token: Token, message: string): SyntaxError {
     const err =
       token.type === TokenType.EOF
-        ? new SyntaxError(message, token.line, 'end')
+        ? new SyntaxError(message, token.line, "end")
         : new SyntaxError(message, token.line, `'${token.lexeme}'`)
     return err
   }
@@ -128,7 +128,7 @@ export class Parser {
         return new ast.SetExpr(expr.object, expr.name, value)
       }
 
-      const error = new SyntaxError('Invalid assignment target', equals.line)
+      const error = new SyntaxError("Invalid assignment target", equals.line)
       errorReporter.report(error)
     }
 
@@ -279,7 +279,7 @@ export class Parser {
       this.consume(TokenType.Dot, "Expect '.' after 'super'")
       const method = this.consume(
         TokenType.Identifier,
-        'Expect superclass method name'
+        "Expect superclass method name"
       )
       return new ast.SuperExpr(keyword, method)
     }
@@ -294,23 +294,23 @@ export class Parser {
       return new ast.GroupingExpr(expr)
     }
 
-    throw this.error(this.peek(), 'Expect expression')
+    throw this.error(this.peek(), "Expect expression")
   }
 
   private declaration(): ast.Stmt {
     if (this.match(TokenType.Class)) return this.classDeclaration()
-    if (this.match(TokenType.Fun)) return this.funDeclaration('function')
+    if (this.match(TokenType.Fun)) return this.funDeclaration("function")
     if (this.match(TokenType.Var)) return this.varDeclaration()
 
     return this.statement()
   }
 
   private classDeclaration(): ast.ClassStmt {
-    const name = this.consume(TokenType.Identifier, 'Expect class name')
+    const name = this.consume(TokenType.Identifier, "Expect class name")
 
     let superclass: ast.VariableExpr | null = null
     if (this.match(TokenType.Less)) {
-      this.consume(TokenType.Identifier, 'Expect superclass name')
+      this.consume(TokenType.Identifier, "Expect superclass name")
       superclass = new ast.VariableExpr(this.previous())
     }
 
@@ -318,7 +318,7 @@ export class Parser {
 
     const methods: ast.FunctionStmt[] = []
     while (!this.check(TokenType.RightBrace) && !this.isAtEnd()) {
-      methods.push(this.funDeclaration('method'))
+      methods.push(this.funDeclaration("method"))
     }
 
     this.consume(TokenType.RightBrace, "Expect ')' after class body")
@@ -326,7 +326,7 @@ export class Parser {
     return new ast.ClassStmt(name, superclass, methods)
   }
 
-  private funDeclaration(kind: 'function' | 'method'): ast.FunctionStmt {
+  private funDeclaration(kind: "function" | "method"): ast.FunctionStmt {
     const name = this.consume(TokenType.Identifier, `Expect ${kind} name`)
     this.consume(TokenType.LeftParen, `Expect '(' after ${kind} name`)
 
@@ -341,7 +341,7 @@ export class Parser {
             )
           )
 
-        params.push(this.consume(TokenType.Identifier, 'Expect parameter name'))
+        params.push(this.consume(TokenType.Identifier, "Expect parameter name"))
       } while (this.match(TokenType.Comma))
     }
     this.consume(TokenType.RightParen, "Expect ')' after parameters.")
@@ -352,7 +352,7 @@ export class Parser {
   }
 
   private varDeclaration(): ast.VarStmt {
-    const name = this.consume(TokenType.Identifier, 'Expect variable name')
+    const name = this.consume(TokenType.Identifier, "Expect variable name")
 
     let initializer: ast.Expr | null = null
     if (this.match(TokenType.Equal)) initializer = this.expression()
