@@ -11,14 +11,13 @@ I'm working on the second implementation using C, following [Part III](https://c
 Clone this repository, and run the CLI as:
 
 ```bash
-$ yarn tslox     # If you're using yarn
-$ npm run tslox  # or npm
+$ pnpm tslox # Or `yarn tslox` / `npm run tslox`
 ```
 
 For detailed usages, see the help message:
 
 ```
-tslox v0.0.0-20210303
+tslox v0.0.0-20211215
 Usage:
 
   tslox [--verbose]            Run tslox REPL (Add '--verbose' to show AST)
@@ -30,7 +29,7 @@ Usage:
 Also, feel free to run examples in the `examples` directory:
 
 ```
-$ yarn tslox examples/hello-world.lox
+$ pnpm tslox examples/hello-world.lox
 Hello, world!
 ```
 
