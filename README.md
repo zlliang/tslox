@@ -51,7 +51,7 @@ Hello, world!
 2. **Verbose mode that prints both ASTs and outputs.** In [Chapter 5](https://craftinginterpreters.com/representing-code.html#the-visitor-pattern) of the book, a utility class [`AstPrinter`](<https://craftinginterpreters.com/representing-code.html#a-(not-very)-pretty-printer>) is created to print parsed Lox ASTs as [S-expressions](https://en.wikipedia.org/wiki/S-expression). TSLox basically adds all of the visit methods, and shows ASTs alongside script outputs, when the `--verbose` flag is enabled.
 
    ```
-   $ yarn tslox --verbose
+   $ pnpm tslox -- --verbose
 
    [tslox]> fun greet() { return "Hello, world!"; }  print greet();
    [AST]
