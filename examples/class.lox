@@ -36,7 +36,6 @@ class Breakfast {
     this.name = "cake";
     this.number = 2;
     print "Cakes ready!";
-    return;
   }
 
   eat() {
